@@ -1,0 +1,5 @@
+hmdm-build (5.36.2-1) unstable; urgency=medium
+
+  * Initial package, built from the medulla branch.
+
+ -- Medulla Support <support@medulla-tech.io>  Thu, 05 Nov 2026 15:52:44 +0100

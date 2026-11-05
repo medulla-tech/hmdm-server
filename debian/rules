@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	find . -type d -name target -prune -exec rm -rf {} +
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+	test -f server/build.properties || cp server/build.properties.example server/build.properties
+	mvn -B -DskipTests install
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+
+# Rewriting the archives would invalidate the signature of the bundled APK
+override_dh_strip_nondeterminism:
+
+execute_after_dh_fixperms:
+	chmod 0755 debian/hmdm-build/opt/HMDM_BUILD/*.sh

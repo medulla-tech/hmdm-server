@@ -1,0 +1,16 @@
+Source: hmdm-build
+Section: admin
+Priority: optional
+Maintainer: Medulla Support <support@medulla-tech.io>
+Build-Depends: debhelper-compat (= 13), maven, default-jdk-headless | openjdk-11-jdk-headless
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/medulla-tech/hmdm-server
+
+Package: hmdm-build
+Architecture: all
+Depends: ${misc:Depends}, aapt, mariadb-client | default-mysql-client, wget
+Description: Headwind MDM build for Medulla
+ This package ships the compiled Headwind MDM web panel (launcher.war) and
+ its installer in /opt/HMDM_BUILD. It does not configure anything by itself:
+ run hmdm_install.sh from /opt/HMDM_BUILD to deploy Headwind MDM.

@@ -1,0 +1,6 @@
+hmdm_install.sh opt/HMDM_BUILD
+letsencrypt-ssl.sh opt/HMDM_BUILD
+iptables-tomcat.sh opt/HMDM_BUILD
+update-web-app.sh opt/HMDM_BUILD
+install opt/HMDM_BUILD
+server/target/launcher.war opt/HMDM_BUILD/server/target
