@@ -77,7 +77,7 @@ public class UploadedFile implements Serializable, CustomerData {
 
     /**
      * <p>A flag indicating whether the file is using the external URL instead of being uploaded.
-     * Notice: "external" is not a reserved keyword in PostgreSQL but reserved in other SQL dialects
+     * Notice: "external" is not a reserved keyword in MySQL/PGSQL but reserved in other SQL dialects
      * </p>
      */
     @ApiModelProperty("A flag indicating whether the file is using the external URL instead of being uploaded.")

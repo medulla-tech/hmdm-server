@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd"
+        logicalFilePath="deviceexport.changelog.xml">
+
+    <!--
+    NOTE: Before re-deploying after a failed attempt, run:
+        DELETE FROM DATABASECHANGELOG WHERE id LIKE 'plugin-deviceexport%';
+        DELETE FROM plugins WHERE identifier = 'deviceexport';
+        DELETE FROM permissions WHERE name = 'plugin_deviceexport_access';
+    -->
+
+    <changeSet id="plugin-deviceexport-12.03.2026-01" author="custom" context="common">
+        <comment>Plugin,new: deviceexport (Device Export/Import)</comment>
+        <sql>
+            INSERT INTO plugins (
+                identifier, name, description,
+                javascriptModuleFile,
+                functionsViewTemplate,
+                settingsViewTemplate,
+                namelocalizationkey,
+                settingsPermission, functionsPermission, deviceFunctionsPermission,
+                enabledForDevice
+            ) VALUES (
+                'deviceexport', 'Device Export/Import', 'Export and import device records via CSV',
+                'app/components/plugins/deviceexport/deviceexport.module.js',
+                'app/components/plugins/deviceexport/views/deviceexport.html',
+                NULL,
+                'plugin.deviceexport.name',
+                'plugin_deviceexport_access',
+                'plugin_deviceexport_access',
+                NULL,
+                FALSE
+            );
+        </sql>
+        <rollback>
+            DELETE FROM plugins WHERE identifier = 'deviceexport';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-deviceexport-12.03.2026-02" author="custom" context="common">
+        <comment>Permission,new: plugin_deviceexport_access</comment>
+        <sql>
+            INSERT INTO permissions (name, description) VALUES ('plugin_deviceexport_access', 'Access to device export/import plugin');
+            INSERT INTO userrolepermissions (roleId, permissionId)
+                SELECT id, currval('permissions_id_seq')
+                FROM userroles;
+        </sql>
+        <rollback>
+            DELETE FROM permissions WHERE name = 'plugin_deviceexport_access';
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

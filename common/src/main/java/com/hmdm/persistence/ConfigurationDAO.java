@@ -134,7 +134,18 @@ public class ConfigurationDAO extends AbstractLinkedDAO<Configuration, Applicati
 
                     this.mapper.removeConfigurationApplicationSettingsById(configuration.getId());
                     if (configuration.getApplicationSettings() != null && !configuration.getApplicationSettings().isEmpty()) {
-                        this.mapper.insertConfigurationApplicationSettings(configuration.getId(), configuration.getApplicationSettings());
+                        configuration.getApplicationSettings().forEach(s -> {
+                            if (s.getApplicationId() == null || s.getApplicationId() == 0) {
+                                log.error("Application setting '{}' has null/zero applicationId (pkg='{}'). Skipping to avoid FK violation.",
+                                        s.getName(), s.getApplicationPkg());
+                            }
+                        });
+                        List<ApplicationSetting> validSettings = configuration.getApplicationSettings().stream()
+                                .filter(s -> s.getApplicationId() != null && s.getApplicationId() != 0)
+                                .collect(java.util.stream.Collectors.toList());
+                        if (!validSettings.isEmpty()) {
+                            this.mapper.insertConfigurationApplicationSettings(configuration.getId(), validSettings);
+                        }
                     }
                     if (configuration.getApplicationUsageParameters() != null && !configuration.getApplicationUsageParameters().isEmpty()) {
                         this.mapper.saveConfigurationApplicationUsageParameters(configuration.getId(), configuration.getApplicationUsageParameters());

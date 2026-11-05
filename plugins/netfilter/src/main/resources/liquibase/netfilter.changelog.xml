@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd"
+        logicalFilePath="netfilter.changelog.xml">
+
+    <changeSet id="plugin-netfilter-01" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM plugins WHERE identifier = 'netfilter'</sqlCheck>
+        </preConditions>
+        <comment>Plugin,new: netfilter</comment>
+        <sql>
+            INSERT INTO plugins (
+                identifier, name, description,
+                javascriptModuleFile,
+                functionsViewTemplate,
+                settingsViewTemplate,
+                namelocalizationkey,
+                settingsPermission, functionsPermission, deviceFunctionsPermission,
+                enabledForDevice
+            ) VALUES (
+                'netfilter', 'Network Filter', 'Local VPN-based network traffic filtering',
+                'app/components/plugins/netfilter/netfilter.module.js',
+                'app/components/plugins/netfilter/views/netfilter.html',
+                'app/components/plugins/netfilter/views/settings.html',
+                'plugin.netfilter.name',
+                'plugin_netfilter_access',
+                'plugin_netfilter_access',
+                NULL,
+                FALSE
+            );
+        </sql>
+        <rollback>
+            DELETE FROM plugins WHERE identifier = 'netfilter';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-netfilter-02" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM permissions WHERE name = 'plugin_netfilter_access'</sqlCheck>
+        </preConditions>
+        <comment>Permission,new: plugin_netfilter_access</comment>
+        <sql>
+            INSERT INTO permissions (name, description) VALUES ('plugin_netfilter_access', 'Access to network filter plugin');
+            INSERT INTO userrolepermissions (roleId, permissionId)
+                SELECT id, currval('permissions_id_seq')
+                FROM userroles;
+        </sql>
+        <rollback>
+            DELETE FROM permissions WHERE name = 'plugin_netfilter_access';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-netfilter-03" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_netfilter_settings"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_netfilter_settings</comment>
+        <sql>
+            CREATE TABLE plugin_netfilter_settings (
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                enabled BOOLEAN NOT NULL DEFAULT FALSE,
+                filterMode VARCHAR(20) NOT NULL DEFAULT 'BLOCKLIST',
+                CONSTRAINT plugin_nf_settings_pk PRIMARY KEY (id),
+                CONSTRAINT plugin_nf_settings_customer_fk FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE,
+                CONSTRAINT plugin_nf_settings_customer_uniq UNIQUE (customerId)
+            ) ENGINE=InnoDB;
+        </sql>
+        <rollback>
+            DROP TABLE plugin_netfilter_settings;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-netfilter-04" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_netfilter_rules"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_netfilter_rules</comment>
+        <sql>
+            CREATE TABLE plugin_netfilter_rules (
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                domain VARCHAR(500) NOT NULL,
+                ruleType VARCHAR(10) NOT NULL DEFAULT 'BLOCK',
+                enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                createdAt BIGINT NOT NULL,
+                CONSTRAINT plugin_nf_rules_pk PRIMARY KEY (id),
+                CONSTRAINT plugin_nf_rules_customer_fk FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+            CREATE INDEX plugin_nf_rules_customer_idx ON plugin_netfilter_rules (customerId);
+        </sql>
+        <rollback>
+            DROP INDEX plugin_nf_rules_customer_idx ON plugin_netfilter_rules;
+            DROP TABLE plugin_netfilter_rules;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-netfilter-05" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_netfilter_profile"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_netfilter_profile</comment>
+        <sql>
+            CREATE TABLE plugin_netfilter_profile (
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                filterMode VARCHAR(20) NOT NULL DEFAULT 'BLOCKLIST',
+                enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                createdAt BIGINT NOT NULL,
+                CONSTRAINT plugin_nf_profile_pk PRIMARY KEY (id),
+                CONSTRAINT plugin_nf_profile_customer_fk FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+            CREATE INDEX plugin_nf_profile_customer_idx ON plugin_netfilter_profile (customerId);
+        </sql>
+        <rollback>
+            DROP INDEX plugin_nf_profile_customer_idx ON plugin_netfilter_profile;
+            DROP TABLE plugin_netfilter_profile;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-netfilter-06" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_netfilter_profile_rule"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_netfilter_profile_rule</comment>
+        <sql>
+            CREATE TABLE plugin_netfilter_profile_rule (
+                id INT NOT NULL AUTO_INCREMENT,
+                profileId INT NOT NULL,
+                domain VARCHAR(500) NOT NULL,
+                ruleType VARCHAR(10) NOT NULL DEFAULT 'BLOCK',
+                enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                createdAt BIGINT NOT NULL,
+                CONSTRAINT plugin_nf_profile_rule_pk PRIMARY KEY (id),
+                CONSTRAINT plugin_nf_profile_rule_profile_fk FOREIGN KEY (profileId) REFERENCES plugin_netfilter_profile(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+            CREATE INDEX plugin_nf_profile_rule_profile_idx ON plugin_netfilter_profile_rule (profileId);
+        </sql>
+        <rollback>
+            DROP INDEX plugin_nf_profile_rule_profile_idx ON plugin_netfilter_profile_rule;
+            DROP TABLE plugin_netfilter_profile_rule;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-netfilter-07" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_netfilter_profile_config"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_netfilter_profile_config</comment>
+        <sql>
+            CREATE TABLE plugin_netfilter_profile_config (
+                profileId INT NOT NULL,
+                configurationId INT NOT NULL,
+                CONSTRAINT plugin_nf_pc_pk PRIMARY KEY (profileId, configurationId),
+                CONSTRAINT plugin_nf_pc_profile_fk FOREIGN KEY (profileId) REFERENCES plugin_netfilter_profile(id) ON DELETE CASCADE,
+                CONSTRAINT plugin_nf_pc_config_fk FOREIGN KEY (configurationId) REFERENCES configurations(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+            CREATE INDEX plugin_nf_pc_config_idx ON plugin_netfilter_profile_config (configurationId);
+        </sql>
+        <rollback>
+            DROP INDEX plugin_nf_pc_config_idx ON plugin_netfilter_profile_config;
+            DROP TABLE plugin_netfilter_profile_config;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

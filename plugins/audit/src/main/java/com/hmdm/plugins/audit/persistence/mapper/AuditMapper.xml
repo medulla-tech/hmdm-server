@@ -42,7 +42,7 @@
 
         <if test="messageFilter != null">
             AND (
-                data.ipAddress ILIKE #{messageFilter} OR data.login ILIKE #{messageFilter} or data.action ILIKE #{messageFilter}
+                data.ipAddress LIKE #{messageFilter} OR data.login LIKE #{messageFilter} or data.action LIKE #{messageFilter}
             )
         </if>
         <if test="dateFrom != null">
@@ -52,14 +52,14 @@
             AND ( data.createTime &lt;= #{dateToMillis} )
         </if>
         ORDER BY data.createTime DESC
-        OFFSET (#{pageNum} - 1) * #{pageSize}
-        LIMIT #{pageSize}
+        <bind name="offset" value="(pageNum - 1) * pageSize"/>
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="countAll"
             parameterType="com.hmdm.plugins.audit.rest.json.AuditLogFilter"
             resultType="long">
-        SELECT COUNT(data.*) AS counter
+    SELECT COUNT(*) AS counter
         FROM plugin_audit_log data
         <if test="userFilter != null">
             LEFT JOIN users ON data.userId=users.id
@@ -70,7 +70,7 @@
         </if>
         <if test="messageFilter != null">
             AND (
-                data.ipAddress ILIKE #{messageFilter} OR data.login ILIKE #{messageFilter} or data.action ILIKE #{messageFilter}
+                data.ipAddress LIKE #{messageFilter} OR data.login LIKE #{messageFilter} or data.action LIKE #{messageFilter}
             )
         </if>
         <if test="dateFrom != null">

@@ -143,11 +143,11 @@ public class PushScheduleDAO extends AbstractDAO<PluginPushSchedule> {
     public List<PluginPushSchedule> findMatchingTime() {
         Calendar c = Calendar.getInstance();
         return pushScheduleMapper.findMatchingTime(
-                parseScheduleMask("" + c.get(Calendar.MINUTE), 60, false, "minute"),
-                parseScheduleMask("" + c.get(Calendar.HOUR_OF_DAY), 24, false, "hour"),
-                parseScheduleMask("" + c.get(Calendar.DAY_OF_MONTH), 31, true, "day"),
-                parseScheduleMask("" + c.get(Calendar.DAY_OF_WEEK), 7, true, "weekday"),
-                parseScheduleMask("" + c.get(Calendar.MONTH), 12, true, "month")
+                parseScheduleMask("" + c.get(Calendar.MINUTE), 60, false, "minute").longValue(),
+                parseScheduleMask("" + c.get(Calendar.HOUR_OF_DAY), 24, false, "hour").intValue(),
+                parseScheduleMask("" + c.get(Calendar.DAY_OF_MONTH), 31, true, "day").intValue(),
+                parseScheduleMask("" + c.get(Calendar.DAY_OF_WEEK), 7, true, "weekday").intValue(),
+                parseScheduleMask("" + c.get(Calendar.MONTH), 12, true, "month").intValue()
         );
     }
 
@@ -167,51 +167,30 @@ public class PushScheduleDAO extends AbstractDAO<PluginPushSchedule> {
     }
 
     private static boolean prepareAllMasks(PluginPushSchedule message) {
-        String minBit = parseScheduleMask(message.getMin(), 60, false, "minute");
+        Long minBit = parseScheduleMask(message.getMin(), 60, false, "minute");
         if (minBit == null) {
             return false;
         }
         message.setMinBit(minBit);
 
-        String hourBit = parseScheduleMask(message.getHour(), 24, false, "hour");
-        if (hourBit == null) {
-            return false;
-        }
-        message.setHourBit(hourBit);
-
-        String dayBit = parseScheduleMask(message.getDay(), 31, true, "day");
-        if (dayBit == null) {
-            return false;
-        }
-        message.setDayBit(dayBit);
-
-        String weekdayBit = parseScheduleMask(message.getWeekday(), 7, true, "weekday");
-        if (weekdayBit == null) {
-            return false;
-        }
-        message.setWeekdayBit(weekdayBit);
-
-        String monthBit = parseScheduleMask(message.getMonth(), 12, true, "month");
-        if (monthBit == null) {
-            return false;
-        }
-        message.setMonthBit(monthBit);
+        message.setHourBit(parseScheduleMask(message.getHour(), 24, false, "hour").intValue());
+        message.setDayBit(parseScheduleMask(message.getDay(), 31, true, "day").intValue());
+        message.setWeekdayBit(parseScheduleMask(message.getWeekday(), 7, true, "weekday").intValue());
+        message.setMonthBit(parseScheduleMask(message.getMonth(), 12, true, "month").intValue());
 
         return true;
     }
 
-    private static String parseScheduleMask(String rawMask, int length, boolean startFromOne, String scope) {
-        String mask = rawMask.replaceAll("\\s+","");
-        StringBuilder res = new StringBuilder(length);
+    private static Long parseScheduleMask(String rawMask, int length, boolean startFromOne, String scope) {
+        String mask = rawMask.replaceAll("\\s+", "");
+        long value = 0L;
+
         if (mask.equals("*")) {
-            for (int i = 0; i < length; i++) {
-                res.append("1");
-            }
+            value = (1L << length) - 1; // all bits set
         } else if (mask.startsWith("*/")) {
-            String ns = mask.substring(2);
             int n;
             try {
-                 n = Integer.parseInt(ns);
+                n = Integer.parseInt(mask.substring(2));
             } catch (NumberFormatException e) {
                 logger.error("Failed to parse schedule mask for " + scope + ": " + mask);
                 return null;
@@ -221,7 +200,9 @@ public class PushScheduleDAO extends AbstractDAO<PluginPushSchedule> {
                 return null;
             }
             for (int i = 0; i < length; i++) {
-                res.append(i % n == 0 ? "1" : "0");
+                if (i % n == 0) {
+                    value |= 1L << i;
+                }
             }
         } else {
             int n;
@@ -231,18 +212,14 @@ public class PushScheduleDAO extends AbstractDAO<PluginPushSchedule> {
                 logger.error("Failed to parse schedule mask for " + scope + ": " + mask);
                 return null;
             }
-            if (startFromOne) {
-                n--;
-            }
+            if (startFromOne) n--;
             if (n < 0 || n >= length) {
                 logger.error("Failed to parse schedule mask for " + scope + ": " + mask);
                 return null;
             }
-            for (int i = 0; i < length; i++) {
-                res.append(i == n ? "1" : "0");
-            }
+            value = 1L << n;
         }
-        return res.toString();
-    }
 
+        return value;
+    }
 }

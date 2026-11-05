@@ -14,12 +14,15 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.fusesource.mqtt.client.MQTTException;
 
 import javax.jms.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
 public class PushSenderMqtt implements PushSender {
@@ -33,6 +36,11 @@ public class PushSenderMqtt implements PushSender {
     private BackgroundTaskRunnerService taskRunner;
     private MemoryPersistence persistence = new MemoryPersistence();
     private long mqttDelay;
+    private final ConcurrentHashMap<String, MqttMessageListener> topicListeners = new ConcurrentHashMap<>();
+
+    public interface MqttMessageListener {
+        void onMessage(String topic, String payload);
+    }
 
     @Inject
     public PushSenderMqtt(@Named("mqtt.server.uri") String serverUri,
@@ -65,6 +73,26 @@ public class PushSenderMqtt implements PushSender {
                 options.setPassword(mqttAdminPassword.toCharArray());
             }
             client.connect(options);
+
+            client.setCallback(new MqttCallback() {
+                @Override
+                public void connectionLost(Throwable cause) {}
+
+                @Override
+                public void messageArrived(String topic, MqttMessage message) {
+                    MqttMessageListener listener = topicListeners.get(topic);
+                    if (listener != null) {
+                        try {
+                            listener.onMessage(topic, new String(message.getPayload()));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                @Override
+                public void deliveryComplete(IMqttDeliveryToken token) {}
+            });
 
             if (mqttDelay > 0) {
                 throttledSender.setClient(client);
@@ -108,5 +136,41 @@ public class PushSenderMqtt implements PushSender {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    public void subscribe(String topic, MqttMessageListener listener) {
+        if (client == null || !client.isConnected()) return;
+        try {
+            topicListeners.put(topic, listener);
+            client.subscribe(topic, 2);
+        } catch (MqttException e) {
+            e.printStackTrace();
+            topicListeners.remove(topic);
+        }
+    }
+
+    public void unsubscribe(String topic) {
+        topicListeners.remove(topic);
+        if (client == null || !client.isConnected()) return;
+        try {
+            client.unsubscribe(topic);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void publishRaw(String topic, String payload) {
+        if (client == null || !client.isConnected()) return;
+        try {
+            MqttMessage msg = new MqttMessage(payload.getBytes());
+            msg.setQos(2);
+            client.publish(topic, msg);
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean isConnected() {
+        return client != null && client.isConnected();
     }
 }

@@ -34,7 +34,7 @@ public interface ApplicationSettingMapper {
     @Select("SELECT appSettings.*, " +
             "       applications.pkg AS applicationPkg, " +
             "       applications.name AS applicationName " +
-            "FROM configurationApplicationSettings appSettings " +
+            "FROM configurationapplicationsettings appSettings " +
             "INNER JOIN applications ON applications.id = appSettings.applicationID " +
             "WHERE appSettings.extRefId = #{id}")
     List<ApplicationSetting> getApplicationSettingsByConfigurationId(@Param("id") int configurationId);
@@ -42,7 +42,7 @@ public interface ApplicationSettingMapper {
     @Select("SELECT appSettings.*, " +
             "       applications.pkg AS applicationPkg, " +
             "       applications.name AS applicationName " +
-            "FROM configurationApplicationSettings appSettings " +
+            "FROM configurationapplicationsettings appSettings " +
             "INNER JOIN applications ON applications.id = appSettings.applicationID " +
             "WHERE appSettings.extRefId = #{id} " +
             "AND applications.pkg = #{pkg} ")
@@ -51,7 +51,7 @@ public interface ApplicationSettingMapper {
     @Select("SELECT appSettings.*, " +
             "       applications.pkg AS applicationPkg, " +
             "       applications.name AS applicationName " +
-            "FROM deviceApplicationSettings appSettings " +
+            "FROM deviceapplicationsettings appSettings " +
             "INNER JOIN applications ON applications.id = appSettings.applicationID " +
             "WHERE appSettings.extRefId = #{id}")
     List<ApplicationSetting> getApplicationSettingsByDeviceId(@Param("id") int deviceId);
@@ -59,7 +59,7 @@ public interface ApplicationSettingMapper {
     @Select("SELECT appSettings.*, " +
             "       applications.pkg AS applicationPkg, " +
             "       applications.name AS applicationName " +
-            "FROM deviceApplicationSettings appSettings " +
+            "FROM deviceapplicationsettings appSettings " +
             "INNER JOIN applications ON applications.id = appSettings.applicationID " +
             "WHERE appSettings.extRefId = #{id} " +
             "AND applications.pkg = #{pkg} ")
@@ -68,7 +68,7 @@ public interface ApplicationSettingMapper {
     @Select("SELECT appSettings.*, " +
             "       applications.pkg AS applicationPkg, " +
             "       applications.name AS applicationName " +
-            "FROM configurationApplicationSettings appSettings " +
+            "FROM configurationapplicationsettings appSettings " +
             "INNER JOIN applications ON applications.id = appSettings.applicationId " +
             "WHERE appSettings.extRefId = #{configurationId} " +
             "AND appSettings.name = #{name} " +
@@ -77,16 +77,16 @@ public interface ApplicationSettingMapper {
                                                    @Param("applicationPkg") String applicationPkg,
                                                    @Param("name") String name);
 
-    @Delete("DELETE FROM configurationApplicationSettings WHERE extRefId=#{configurationId} AND applicationId=#{applicationId} AND name=#{name}")
+    @Delete("DELETE FROM configurationapplicationsettings WHERE extRefId=#{configurationId} AND applicationId=#{applicationId} AND name=#{name}")
     void deleteApplicationSettingByName(@Param("configurationId") int configurationId,
                                         @Param("applicationId") int applicationId,
                                         @Param("name") String name);
 
-    @Delete("DELETE FROM configurationApplicationSettings WHERE extRefId=#{configurationId} AND applicationId=#{applicationId}")
+    @Delete("DELETE FROM configurationapplicationsettings WHERE extRefId=#{configurationId} AND applicationId=#{applicationId}")
     void deleteApplicationSettingByApp(@Param("configurationId") int configurationId,
                                         @Param("applicationId") int applicationId);
 
-    @Insert("INSERT INTO configurationApplicationSettings (extRefId, applicationId, name, type, value, comment, readonly, lastUpdate) " +
+    @Insert("INSERT INTO configurationapplicationsettings (extRefId, applicationId, name, type, value, comment, readonly, lastUpdate) " +
             "        VALUES (#{configurationId}, #{item.applicationId}, #{item.name}, #{item.type}, #{item.value}, #{item.comment}, #{item.readonly}, #{item.lastUpdate})")
     void insertApplicationSetting(@Param("configurationId") int configurationId, @Param("item") ApplicationSetting setting);
 }

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd"
+        logicalFilePath="remotecontrol.changelog.xml">
+
+    <changeSet id="plugin-remotecontrol-30.03.2026-01" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM plugins WHERE identifier = 'remotecontrol'</sqlCheck>
+        </preConditions>
+        <comment>Plugin,new: remotecontrol</comment>
+        <sql>
+            INSERT INTO plugins (
+                identifier, name, description,
+                javascriptModuleFile,
+                functionsViewTemplate,
+                settingsViewTemplate,
+                namelocalizationkey,
+                settingsPermission, functionsPermission, deviceFunctionsPermission,
+                enabledForDevice
+            ) VALUES (
+                'remotecontrol', 'Remote Control', 'Remote control of devices via WebRTC',
+                'app/components/plugins/remotecontrol/remotecontrol.module.js',
+                'app/components/plugins/remotecontrol/views/remotecontrol.html',
+                'app/components/plugins/remotecontrol/views/settings.html',
+                'plugin.remotecontrol.name',
+                'plugin_remotecontrol_access',
+                'plugin_remotecontrol_access',
+                NULL,
+                FALSE
+            );
+        </sql>
+        <rollback>
+            DELETE FROM plugins WHERE identifier = 'remotecontrol';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-remotecontrol-30.03.2026-02" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM permissions WHERE name = 'plugin_remotecontrol_access'</sqlCheck>
+        </preConditions>
+        <comment>Permission,new: plugin_remotecontrol_access</comment>
+        <sql>
+            INSERT INTO permissions (name, description) VALUES ('plugin_remotecontrol_access', 'Access to remote control plugin');
+            INSERT INTO userrolepermissions (roleId, permissionId)
+                SELECT id, currval('permissions_id_seq')
+                FROM userroles;
+        </sql>
+        <rollback>
+            DELETE FROM permissions WHERE name = 'plugin_remotecontrol_access';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-remotecontrol-30.03.2026-03" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_remotecontrol_settings"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_remotecontrol_settings</comment>
+        <sql>
+            CREATE TABLE plugin_remotecontrol_settings (
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                stunUrl VARCHAR(500) NOT NULL DEFAULT 'stun:stun.l.google.com:19302',
+                turnUrl VARCHAR(500) NOT NULL DEFAULT '',
+                turnUsername VARCHAR(200) NOT NULL DEFAULT '',
+                turnPassword VARCHAR(200) NOT NULL DEFAULT '',
+                CONSTRAINT plugin_rc_settings_pk PRIMARY KEY (id),
+                CONSTRAINT plugin_rc_settings_customer_fk FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE,
+                CONSTRAINT plugin_rc_settings_customer_uniq UNIQUE (customerId)
+            ) ENGINE=InnoDB;
+        </sql>
+        <rollback>
+            DROP TABLE plugin_remotecontrol_settings;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-remotecontrol-30.03.2026-04" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_remotecontrol_sessions"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_remotecontrol_sessions</comment>
+        <sql>
+            CREATE TABLE plugin_remotecontrol_sessions (
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                deviceId INT NOT NULL,
+                deviceNumber VARCHAR(100) NOT NULL,
+                adminUserId INT NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+                token VARCHAR(64) NOT NULL,
+                startTs BIGINT NOT NULL,
+                endTs BIGINT,
+                CONSTRAINT plugin_rc_sessions_pk PRIMARY KEY (id),
+                CONSTRAINT plugin_rc_sessions_customer_fk FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+            CREATE INDEX plugin_rc_sessions_device_idx ON plugin_remotecontrol_sessions (deviceNumber, status);
+        </sql>
+        <rollback>
+            DROP INDEX plugin_rc_sessions_device_idx ON plugin_remotecontrol_sessions;
+            DROP TABLE plugin_remotecontrol_sessions;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

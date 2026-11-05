@@ -1,6 +1,6 @@
 // Localization completed
 angular.module('headwind-kiosk')
-    .factory('localization', function ($http, $timeout, settingsService, authService, getBrowserLanguage,
+    .factory('localization', function ($http, $timeout, $rootScope, settingsService, authService, getBrowserLanguage,
                                        ENGLISH, localizeText, LOCALIZATION_BUNDLES) {
 
         var loadUserLangSettings = function (scope) {
@@ -107,7 +107,20 @@ angular.module('headwind-kiosk')
                         $timeout(waitAndLoadLocalizationBundles, delay);
                     } else {
                         console.log("Loading resource bundles for plugin: ", pluginId);
-                        LOCALIZATION_BUNDLES.forEach(loadLocalizationBundle);
+                        var pending = LOCALIZATION_BUNDLES.length;
+                        LOCALIZATION_BUNDLES.forEach(function(bundleId) {
+                            var bundleUrl = 'app/components/plugins/' + pluginId + '/i18n/' + bundleId + ".json";
+                            $http.get(bundleUrl).then(function (response) {
+                                if (response.status === 200 && response.data && typeof response.data === 'object') {
+                                    angular.extend(document.localization[bundleId], response.data);
+                                }
+                            }).finally(function () {
+                                pending--;
+                                if (pending === 0) {
+                                    $rootScope.$broadcast('aero_LOCALE_CHANGED');
+                                }
+                            });
+                        });
                     }
                 };
 

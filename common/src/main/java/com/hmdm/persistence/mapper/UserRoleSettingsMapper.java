@@ -34,13 +34,13 @@ import org.apache.ibatis.annotations.Select;
 public interface UserRoleSettingsMapper {
 
     @Select({"SELECT * " +
-            "FROM userRoleSettings " +
+            "FROM userrolesettings " +
             "WHERE customerId = #{customerId} AND roleId = #{roleId} " +
             "LIMIT 1"})
     UserRoleSettings getUserRoleSettings(@Param("customerId") int customerId, @Param("roleId") int roleId);
 
     @Insert({
-            "INSERT INTO userRoleSettings (" +
+            "INSERT INTO userrolesettings (" +
                     "columnDisplayedDeviceStatus, " +
                     "columnDisplayedDeviceDate, " +
                     "columnDisplayedDeviceNumber, " +
@@ -94,33 +94,31 @@ public interface UserRoleSettingsMapper {
                     "#{columnDisplayedCustom3}," +
                     "#{roleId}," +
                     "#{customerId}" +
-                    ") " +
-                    "ON CONFLICT ON CONSTRAINT userRoleSettings_role_customer_uniq DO " +
-                    "UPDATE SET " +
-                    "columnDisplayedDeviceStatus = EXCLUDED.columnDisplayedDeviceStatus, " +
-                    "columnDisplayedDeviceDate = EXCLUDED.columnDisplayedDeviceDate, " +
-                    "columnDisplayedDeviceNumber = EXCLUDED.columnDisplayedDeviceNumber, " +
-                    "columnDisplayedDeviceModel = EXCLUDED.columnDisplayedDeviceModel, " +
-                    "columnDisplayedDevicePermissionsStatus = EXCLUDED.columnDisplayedDevicePermissionsStatus, " +
-                    "columnDisplayedDeviceAppInstallStatus = EXCLUDED.columnDisplayedDeviceAppInstallStatus, " +
-                    "columnDisplayedDeviceFilesStatus = EXCLUDED.columnDisplayedDeviceFilesStatus, " +
-                    "columnDisplayedDeviceConfiguration = EXCLUDED.columnDisplayedDeviceConfiguration, " +
-                    "columnDisplayedDeviceImei = EXCLUDED.columnDisplayedDeviceImei, " +
-                    "columnDisplayedDevicePhone = EXCLUDED.columnDisplayedDevicePhone, " +
-                    "columnDisplayedDeviceDesc = EXCLUDED.columnDisplayedDeviceDesc, " +
-                    "columnDisplayedDeviceGroup = EXCLUDED.columnDisplayedDeviceGroup, " +
-                    "columnDisplayedLauncherVersion = EXCLUDED.columnDisplayedLauncherVersion, " +
-                    "columnDisplayedBatteryLevel = EXCLUDED.columnDisplayedBatteryLevel, " +
-                    "columnDisplayedDefaultLauncher = EXCLUDED.columnDisplayedDefaultLauncher, " +
-                    "columnDisplayedMdmMode = EXCLUDED.columnDisplayedMdmMode, " +
-                    "columnDisplayedKioskMode = EXCLUDED.columnDisplayedKioskMode, " +
-                    "columnDisplayedAndroidVersion = EXCLUDED.columnDisplayedAndroidVersion, " +
-                    "columnDisplayedEnrollmentDate = EXCLUDED.columnDisplayedEnrollmentDate, " +
-                    "columnDisplayedSerial = EXCLUDED.columnDisplayedSerial, " +
-                    "columnDisplayedPublicIp = EXCLUDED.columnDisplayedPublicIp, " +
-                    "columnDisplayedCustom1 = EXCLUDED.columnDisplayedCustom1, " +
-                    "columnDisplayedCustom2 = EXCLUDED.columnDisplayedCustom2, " +
-                    "columnDisplayedCustom3 = EXCLUDED.columnDisplayedCustom3"
+                    ") ON DUPLICATE KEY UPDATE " +
+                    "columnDisplayedDeviceStatus = VALUES(columnDisplayedDeviceStatus), " +
+                    "columnDisplayedDeviceDate = VALUES(columnDisplayedDeviceDate), " +
+                    "columnDisplayedDeviceNumber = VALUES(columnDisplayedDeviceNumber), " +
+                    "columnDisplayedDeviceModel = VALUES(columnDisplayedDeviceModel), " +
+                    "columnDisplayedDevicePermissionsStatus = VALUES(columnDisplayedDevicePermissionsStatus), " +
+                    "columnDisplayedDeviceAppInstallStatus = VALUES(columnDisplayedDeviceAppInstallStatus), " +
+                    "columnDisplayedDeviceFilesStatus = VALUES(columnDisplayedDeviceFilesStatus), " +
+                    "columnDisplayedDeviceConfiguration = VALUES(columnDisplayedDeviceConfiguration), " +
+                    "columnDisplayedDeviceImei = VALUES(columnDisplayedDeviceImei), " +
+                    "columnDisplayedDevicePhone = VALUES(columnDisplayedDevicePhone), " +
+                    "columnDisplayedDeviceDesc = VALUES(columnDisplayedDeviceDesc), " +
+                    "columnDisplayedDeviceGroup = VALUES(columnDisplayedDeviceGroup), " +
+                    "columnDisplayedLauncherVersion = VALUES(columnDisplayedLauncherVersion), " +
+                    "columnDisplayedBatteryLevel = VALUES(columnDisplayedBatteryLevel), " +
+                    "columnDisplayedDefaultLauncher = VALUES(columnDisplayedDefaultLauncher), " +
+                    "columnDisplayedMdmMode = VALUES(columnDisplayedMdmMode), " +
+                    "columnDisplayedKioskMode = VALUES(columnDisplayedKioskMode), " +
+                    "columnDisplayedAndroidVersion = VALUES(columnDisplayedAndroidVersion), " +
+                    "columnDisplayedEnrollmentDate = VALUES(columnDisplayedEnrollmentDate), " +
+                    "columnDisplayedSerial = VALUES(columnDisplayedSerial), " +
+                    "columnDisplayedPublicIp = VALUES(columnDisplayedPublicIp), " +
+                    "columnDisplayedCustom1 = VALUES(columnDisplayedCustom1), " +
+                    "columnDisplayedCustom2 = VALUES(columnDisplayedCustom2), " +
+                    "columnDisplayedCustom3 = VALUES(columnDisplayedCustom3)"
     })
     void saveUserRoleCommonSettings(UserRoleSettings settings);
 }

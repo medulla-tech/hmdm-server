@@ -370,8 +370,8 @@ public class DeviceResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getDeviceApplicationSettings(@PathParam("id") @ApiParam("Device ID") Integer id) {
         try {
-            final List<ApplicationSetting> deviceApplicationSettings = this.deviceDAO.getDeviceApplicationSettings(id);
-            return Response.OK(deviceApplicationSettings);
+            final List<ApplicationSetting> deviceapplicationsettings = this.deviceDAO.getDeviceApplicationSettings(id);
+            return Response.OK(deviceapplicationsettings);
         } catch (Exception e) {
             log.error("Failed to retrieve the application settings for device #{}", id, e);
             return Response.INTERNAL_ERROR();

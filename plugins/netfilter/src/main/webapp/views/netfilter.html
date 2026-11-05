@@ -1,0 +1,214 @@
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+  <div ng-controller="NetFilterPluginTabController">
+
+    <div class="alert alert-danger" ng-show="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert-success" ng-show="successMessage">{{ successMessage }}</div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         LIST VIEW  (shown when not editing a profile)
+    ══════════════════════════════════════════════════════════════════════ -->
+    <div ng-show="!editingProfile">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h4 style="margin:0;">
+                {{ 'plugin.netfilter.profiles' | localize }}
+                <span class="badge" style="margin-left:6px;">{{ profiles.length }}</span>
+            </h4>
+            <button class="btn btn-primary" ng-hide="showCreate" ng-click="openCreate()">
+                <i class="fa fa-plus"></i> {{ 'plugin.netfilter.profile.create' | localize }}
+            </button>
+        </div>
+
+        <!-- Inline create form -->
+        <div class="panel panel-default" ng-show="showCreate">
+            <div class="panel-heading"><strong>{{ 'plugin.netfilter.profile.new' | localize }}</strong></div>
+            <div class="panel-body">
+                <form ng-submit="submitCreate()">
+                    <div class="row">
+                        <div class="col-sm-5">
+                            <div class="form-group">
+                                <label>{{ 'plugin.netfilter.profile.name' | localize }}</label>
+                                <input type="text" class="form-control" ng-model="newProfile.name"
+                                       placeholder="{{ 'plugin.netfilter.profile.name.placeholder' | localize }}" required/>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label>{{ 'plugin.netfilter.settings.mode' | localize }}</label>
+                                <select class="form-control" ng-model="newProfile.filterMode">
+                                    <option value="BLOCKLIST">{{ 'plugin.netfilter.mode.blocklist' | localize }}</option>
+                                    <option value="ALLOWLIST">{{ 'plugin.netfilter.mode.allowlist' | localize }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-success">{{ 'plugin.netfilter.save' | localize }}</button>
+                                    <button type="button" class="btn btn-default" style="margin-left:6px;" ng-click="cancelCreate()">{{ 'cancel' | localize }}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Profiles table -->
+        <div class="panel-body" ng-show="loading">
+            <i class="fa fa-spinner fa-spin"></i> {{ 'loading' | localize }}
+        </div>
+
+        <table class="table table-striped table-hover" ng-show="!loading && profiles.length > 0">
+            <thead>
+                <tr>
+                    <th>{{ 'plugin.netfilter.profile.name' | localize }}</th>
+                    <th>{{ 'plugin.netfilter.settings.mode' | localize }}</th>
+                    <th>{{ 'plugin.netfilter.profile.rules.count' | localize }}</th>
+                    <th>{{ 'plugin.netfilter.profile.configs.count' | localize }}</th>
+                    <th>{{ 'plugin.netfilter.enabled' | localize }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="profile in profiles">
+                    <td><strong>{{ profile.name }}</strong></td>
+                    <td>
+                        <span class="label label-warning" ng-show="profile.filterMode === 'BLOCKLIST'">{{ 'plugin.netfilter.mode.blocklist' | localize }}</span>
+                        <span class="label label-info"    ng-show="profile.filterMode === 'ALLOWLIST'">{{ 'plugin.netfilter.mode.allowlist' | localize }}</span>
+                    </td>
+                    <td>{{ profile.ruleCount }}</td>
+                    <td>{{ profile.configCount }}</td>
+                    <td>
+                        <input type="checkbox" ng-model="profile.enabled" ng-change="toggleProfileEnabled(profile)"/>
+                    </td>
+                    <td>
+                        <button class="btn btn-xs btn-default" ng-click="openEdit(profile)"
+                                title="{{ 'plugin.netfilter.profile.edit' | localize }}">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="btn btn-xs btn-danger" style="margin-left:4px;"
+                                ng-click="deleteProfile(profile)"
+                                title="{{ 'remove' | localize }}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="well well-sm" ng-show="!loading && profiles.length === 0 && !showCreate">
+            <em>{{ 'plugin.netfilter.no.profiles' | localize }}</em>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         EDIT VIEW  (shown when editing a profile)
+    ══════════════════════════════════════════════════════════════════════ -->
+    <div ng-show="editingProfile">
+
+        <div style="margin-bottom:16px;">
+            <button class="btn btn-default btn-sm" ng-click="cancelEdit()">
+                <i class="fa fa-arrow-left"></i> {{ 'plugin.netfilter.back' | localize }}
+            </button>
+        </div>
+
+        <!-- Profile name / mode / save -->
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <form class="form-inline" ng-submit="saveProfile()">
+                    <div class="form-group" style="margin-right:12px;">
+                        <label>{{ 'plugin.netfilter.profile.name' | localize }}</label>
+                        <input type="text" class="form-control" style="margin-left:6px; min-width:220px;"
+                               ng-model="editingProfile.name" required/>
+                    </div>
+                    <div class="form-group" style="margin-right:12px;">
+                        <label>{{ 'plugin.netfilter.settings.mode' | localize }}</label>
+                        <select class="form-control" style="margin-left:6px;" ng-model="editingProfile.filterMode">
+                            <option value="BLOCKLIST">{{ 'plugin.netfilter.mode.blocklist' | localize }}</option>
+                            <option value="ALLOWLIST">{{ 'plugin.netfilter.mode.allowlist' | localize }}</option>
+                        </select>
+                        <small class="text-muted" style="margin-left:8px;" ng-show="editingProfile.filterMode === 'BLOCKLIST'">
+                            {{ 'plugin.netfilter.mode.blocklist.hint' | localize }}
+                        </small>
+                        <small class="text-muted" style="margin-left:8px;" ng-show="editingProfile.filterMode === 'ALLOWLIST'">
+                            {{ 'plugin.netfilter.mode.allowlist.hint' | localize }}
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">{{ 'plugin.netfilter.save' | localize }}</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <!-- Domains / Rules -->
+            <div class="col-sm-7">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        {{ 'plugin.netfilter.rules' | localize }}
+                        <span class="badge" style="margin-left:6px;">{{ profileRules.length }}</span>
+                    </div>
+                    <div class="panel-body">
+                        <form class="form-inline" ng-submit="addProfileRule()">
+                            <div class="form-group" style="margin-right:6px;">
+                                <input type="text" class="form-control" style="min-width:220px;"
+                                       ng-model="newRule.domain"
+                                       placeholder="e.g. tiktok.com"/>
+                            </div>
+                            <button type="submit" class="btn btn-primary">{{ 'plugin.netfilter.add' | localize }}</button>
+                        </form>
+                    </div>
+                    <table class="table table-condensed" ng-show="profileRules.length > 0">
+                        <tbody>
+                            <tr ng-repeat="rule in profileRules">
+                                <td>{{ rule.domain }}</td>
+                                <td style="width:40px; text-align:right;">
+                                    <button class="btn btn-xs btn-danger" ng-click="deleteProfileRule(rule)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="panel-body" ng-show="profileRules.length === 0">
+                        <em>{{ 'plugin.netfilter.no.rules' | localize }}</em>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configurations (checkboxes) -->
+            <div class="col-sm-5">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        {{ 'plugin.netfilter.profile.configurations' | localize }}
+                    </div>
+                    <div class="panel-body" ng-show="allConfigurations.length === 0">
+                        <em>{{ 'plugin.netfilter.profile.no.configs.available' | localize }}</em>
+                    </div>
+                    <ul class="list-group" ng-show="allConfigurations.length > 0" style="margin-bottom:0;">
+                        <li class="list-group-item" ng-repeat="c in allConfigurations" style="padding:8px 15px;">
+                            <label style="font-weight:normal; cursor:pointer; margin:0; display:block;">
+                                <input type="checkbox"
+                                       ng-model="configSelection[c.id]"
+                                       ng-change="onConfigToggle(c.id)"
+                                       style="margin-right:8px;"/>
+                                {{ c.name }}
+                            </label>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>

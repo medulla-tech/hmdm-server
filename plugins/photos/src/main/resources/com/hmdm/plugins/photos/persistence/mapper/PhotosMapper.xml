@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hmdm.plugins.photos.persistence.mapper.PhotosMapper">
+
+    <select id="findPhotos" parameterType="com.hmdm.plugins.photos.rest.json.PhotosListFilter"
+            resultType="com.hmdm.plugins.photos.persistence.domain.PhotosPhotoRecord">
+        SELECT id, customerId, deviceNumber, serverPath, originalName, uploadTs, lat, lon, address
+        FROM plugin_photos_files
+        WHERE customerId = #{customerId}
+        <if test="deviceNumber != null and deviceNumber != ''">
+            AND deviceNumber = #{deviceNumber}
+        </if>
+        <if test="dateFrom != null">
+            AND uploadTs &gt;= #{dateFrom}
+        </if>
+        <if test="dateTo != null">
+            AND uploadTs &lt;= #{dateTo}
+        </if>
+        ORDER BY uploadTs DESC
+        LIMIT #{pageSize} OFFSET #{pageNum}
+    </select>
+
+    <select id="countPhotos" parameterType="com.hmdm.plugins.photos.rest.json.PhotosListFilter"
+            resultType="long">
+        SELECT COUNT(*)
+        FROM plugin_photos_files
+        WHERE customerId = #{customerId}
+        <if test="deviceNumber != null and deviceNumber != ''">
+            AND deviceNumber = #{deviceNumber}
+        </if>
+        <if test="dateFrom != null">
+            AND uploadTs &gt;= #{dateFrom}
+        </if>
+        <if test="dateTo != null">
+            AND uploadTs &lt;= #{dateTo}
+        </if>
+    </select>
+
+</mapper>

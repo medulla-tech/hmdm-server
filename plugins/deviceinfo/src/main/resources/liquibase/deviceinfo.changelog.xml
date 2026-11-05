@@ -67,7 +67,7 @@
         <comment>Permission,new: plugin_deviceinfo_access</comment>
         <sql>
             INSERT INTO permissions (name, description) VALUES ('plugin_deviceinfo_access', 'Имеет доступ к детальной и динамической информации об устройствах');
-            INSERT INTO userRolePermissions (roleId, permissionId)
+            INSERT INTO userrolepermissions (roleId, permissionId)
                 SELECT id, currval('permissions_id_seq')
                 FROM userroles;
         </sql>
@@ -80,11 +80,12 @@
         <comment>Table,new: plugin_deviceinfo_settings</comment>
         <sql>
             CREATE TABLE plugin_deviceinfo_settings (
-                id serial NOT NULL CONSTRAINT plugin_deviceinfo_settings_pr_key PRIMARY KEY,
-                customerId INT NOT NULL REFERENCES customers (id) ON DELETE CASCADE,
-                dataPreservePeriod INT NOT NULL DEFAULT 30
-            );
-
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                dataPreservePeriod INT NOT NULL DEFAULT 30,
+                CONSTRAINT plugin_deviceinfo_settings_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_deviceinfo_settings_customerId_fkey FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
             ALTER TABLE plugin_deviceinfo_settings ADD CONSTRAINT plugin_deviceinfo_settings_customer_unique UNIQUE (customerId);
         </sql>
         <rollback>
@@ -94,26 +95,29 @@
     </changeSet>
 
     <changeSet id="plugin-deviceinfo-22.10.2019-15:28" author="isv" context="common">
-        <comment>Table,new: plugin_deviceinfo_deviceParams</comment>
+        <comment>Table,new: plugin_deviceinfo_deviceparams</comment>
         <sql>
-            CREATE TABLE plugin_deviceinfo_deviceParams (
-                id serial NOT NULL CONSTRAINT plugin_deviceinfo_deviceParams_pr_key PRIMARY KEY,
-                deviceId INT NOT NULL REFERENCES devices (id) ON DELETE CASCADE,
-                customerId INT NOT NULL REFERENCES customers (id) ON DELETE CASCADE,
-                ts BIGINT NOT NULL
-            );
+            CREATE TABLE plugin_deviceinfo_deviceparams (
+                id INT NOT NULL AUTO_INCREMENT,
+                deviceId INT NOT NULL,
+                customerId INT NOT NULL,
+                ts BIGINT NOT NULL,
+                CONSTRAINT plugin_deviceinfo_deviceparams_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_deviceinfo_deviceparams_deviceId_fkey FOREIGN KEY (deviceId) REFERENCES devices(id) ON DELETE CASCADE,
+                CONSTRAINT plugin_deviceinfo_deviceparams_customerId_fkey FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE plugin_deviceinfo_deviceParams;
+            DROP TABLE plugin_deviceinfo_deviceparams;
         </rollback>
     </changeSet>
 
     <changeSet id="plugin-deviceinfo-22.10.2019-15:31" author="isv" context="common">
-        <comment>Table,new: plugin_deviceinfo_deviceParams_device</comment>
+        <comment>Table,new: plugin_deviceinfo_deviceparams_device</comment>
         <sql>
-            CREATE TABLE plugin_deviceinfo_deviceParams_device (
-                id serial NOT NULL CONSTRAINT plugin_deviceinfo_deviceParams_device_pr_key PRIMARY KEY,
-                recordId INT NOT NULL UNIQUE REFERENCES plugin_deviceinfo_deviceParams (id) ON DELETE CASCADE,
+            CREATE TABLE plugin_deviceinfo_deviceparams_device (
+                id INT NOT NULL AUTO_INCREMENT,
+                recordId INT NOT NULL,
                 batteryLevel INT,
                 batteryCharging VARCHAR(20),
                 ip VARCHAR(50),
@@ -122,59 +126,68 @@
                 wifi BOOLEAN,
                 mobileData BOOLEAN,
                 gps BOOLEAN,
-                bluetooth BOOLEAN
-            );
+                bluetooth BOOLEAN,
+                CONSTRAINT plugin_deviceinfo_deviceparams_device_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_deviceinfo_deviceparams_device_recordId_unq UNIQUE (recordId),
+                CONSTRAINT plugin_deviceinfo_deviceparams_device_recordId_fkey FOREIGN KEY (recordId) REFERENCES plugin_deviceinfo_deviceparams(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE plugin_deviceinfo_deviceParams_device;
+            DROP TABLE plugin_deviceinfo_deviceparams_device;
         </rollback>
     </changeSet>
 
     <changeSet id="plugin-deviceinfo-22.10.2019-16:02" author="isv" context="common">
-        <comment>Table,new: plugin_deviceinfo_deviceParams_wifi</comment>
+        <comment>Table,new: plugin_deviceinfo_deviceparams_wifi</comment>
         <sql>
-            CREATE TABLE plugin_deviceinfo_deviceParams_wifi (
-                id serial NOT NULL CONSTRAINT plugin_deviceinfo_deviceParams_wifi_pr_key PRIMARY KEY,
-                recordId INT NOT NULL UNIQUE REFERENCES plugin_deviceinfo_deviceParams (id) ON DELETE CASCADE,
+            CREATE TABLE plugin_deviceinfo_deviceparams_wifi (
+                id INT NOT NULL AUTO_INCREMENT,
+                recordId INT NOT NULL,
                 rssi INT,
                 ssid VARCHAR(500),
                 security VARCHAR(500),
                 state VARCHAR(20),
                 ip VARCHAR(50),
                 tx BIGINT,
-                rx BIGINT
-            );
+                rx BIGINT,
+                CONSTRAINT plugin_deviceinfo_deviceparams_wifi_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_deviceinfo_deviceparams_wifi_recordId_unq UNIQUE (recordId),
+                CONSTRAINT plugin_deviceinfo_deviceparams_wifi_recordId_fkey FOREIGN KEY (recordId) REFERENCES plugin_deviceinfo_deviceparams(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE plugin_deviceinfo_deviceParams_wifi;
+            DROP TABLE plugin_deviceinfo_deviceparams_wifi;
         </rollback>
     </changeSet>
 
     <changeSet id="plugin-deviceinfo-22.10.2019-16:29" author="isv" context="common">
-        <comment>Table,new: plugin_deviceinfo_deviceParams_gps</comment>
+        <comment>Table,new: plugin_deviceinfo_deviceparams_gps</comment>
         <sql>
-            CREATE TABLE plugin_deviceinfo_deviceParams_gps (
-                id serial NOT NULL CONSTRAINT plugin_deviceinfo_deviceParams_gps_pr_key PRIMARY KEY,
-                recordId INT NOT NULL UNIQUE REFERENCES plugin_deviceinfo_deviceParams (id) ON DELETE CASCADE,
+            CREATE TABLE plugin_deviceinfo_deviceparams_gps (
+                id INT NOT NULL AUTO_INCREMENT,
+                recordId INT NOT NULL,
                 state VARCHAR(20),
-                lat DOUBLE PRECISION,
-                lon DOUBLE PRECISION,
-                alt DOUBLE PRECISION,
-                speed DOUBLE PRECISION,
-                course DOUBLE PRECISION
-            );
+                lat DOUBLE,
+                lon DOUBLE,
+                alt DOUBLE,
+                speed DOUBLE,
+                course DOUBLE,
+                CONSTRAINT plugin_deviceinfo_deviceparams_gps_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_deviceinfo_deviceparams_gps_recordId_unq UNIQUE (recordId),
+                CONSTRAINT plugin_deviceinfo_deviceparams_gps_recordId_fkey FOREIGN KEY (recordId) REFERENCES plugin_deviceinfo_deviceparams(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE plugin_deviceinfo_deviceParams_gps;
+            DROP TABLE plugin_deviceinfo_deviceparams_gps;
         </rollback>
     </changeSet>
 
     <changeSet id="plugin-deviceinfo-22.10.2019-16:48" author="isv" context="common">
-        <comment>Table,new: plugin_deviceinfo_deviceParams_mobile</comment>
+        <comment>Table,new: plugin_deviceinfo_deviceparams_mobile</comment>
         <sql>
-            CREATE TABLE plugin_deviceinfo_deviceParams_mobile (
-                id serial NOT NULL CONSTRAINT plugin_deviceinfo_deviceParams_mobile_pr_key PRIMARY KEY,
-                recordId INT NOT NULL UNIQUE REFERENCES plugin_deviceinfo_deviceParams (id) ON DELETE CASCADE,
+            CREATE TABLE plugin_deviceinfo_deviceparams_mobile (
+                id INT NOT NULL AUTO_INCREMENT,
+                recordId INT NOT NULL,
                 rssi INT,
                 carrier VARCHAR(50),
                 data BOOLEAN,
@@ -182,20 +195,23 @@
                 state VARCHAR(20),
                 simState VARCHAR(20),
                 tx BIGINT,
-                rx BIGINT
-            );
+                rx BIGINT,
+                CONSTRAINT plugin_deviceinfo_deviceparams_mobile_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_deviceinfo_deviceparams_mobile_recordId_unq UNIQUE (recordId),
+                CONSTRAINT plugin_deviceinfo_deviceparams_mobile_recordId_fkey FOREIGN KEY (recordId) REFERENCES plugin_deviceinfo_deviceparams(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE plugin_deviceinfo_deviceParams_mobile;
+            DROP TABLE plugin_deviceinfo_deviceparams_mobile;
         </rollback>
     </changeSet>
 
     <changeSet id="plugin-deviceinfo-22.10.2019-16:49" author="isv" context="common">
-        <comment>Table,new: plugin_deviceinfo_deviceParams_mobile2</comment>
+        <comment>Table,new: plugin_deviceinfo_deviceparams_mobile2</comment>
         <sql>
-            CREATE TABLE plugin_deviceinfo_deviceParams_mobile2 (
-                id serial NOT NULL CONSTRAINT plugin_deviceinfo_deviceParams_mobile2_pr_key PRIMARY KEY,
-                recordId INT NOT NULL UNIQUE REFERENCES plugin_deviceinfo_deviceParams (id) ON DELETE CASCADE,
+            CREATE TABLE plugin_deviceinfo_deviceparams_mobile2 (
+                id INT NOT NULL AUTO_INCREMENT,
+                recordId INT NOT NULL,
                 rssi INT,
                 carrier VARCHAR(50),
                 data BOOLEAN,
@@ -203,11 +219,14 @@
                 state VARCHAR(20),
                 simState VARCHAR(20),
                 tx BIGINT,
-                rx BIGINT
-            );
+                rx BIGINT,
+                CONSTRAINT plugin_deviceinfo_deviceparams_mobile2_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_deviceinfo_deviceparams_mobile2_recordId_unq UNIQUE (recordId),
+                CONSTRAINT plugin_deviceinfo_deviceparams_mobile2_recordId_fkey FOREIGN KEY (recordId) REFERENCES plugin_deviceinfo_deviceparams(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE plugin_deviceinfo_deviceParams_mobile2;
+            DROP TABLE plugin_deviceinfo_deviceparams_mobile2;
         </rollback>
     </changeSet>
 

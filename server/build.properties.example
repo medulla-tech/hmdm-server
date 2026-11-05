@@ -1,19 +1,19 @@
 # This is a sample file; copy this file to build.properties
 
 # database settings
-jdbc.url=jdbc:postgresql://localhost:5432/hmdm
-jdbc.driver=org.postgresql.Driver
+jdbc.url=jdbc:mariadb://localhost:3306/hmdm
+jdbc.driver=org.mariadb.jdbc.Driver
 jdbc.username=hmdm
 jdbc.password=hmdm
 
 # A path to a base app directory to store internal data
-base.directory=D:/home/launcher
+base.directory=/home/hmdm/launcher
 
 # A path to a directory to store uploaded files
-files.directory=D:/home/launcher/files
+files.directory=/home/hmdm/launcher/files
 
 # A base URL for deployment of this build
-base.url=http://localhost:9090
+base.url=http://localhost
 
 # A usage scenario:
 # shared: the application hosts data for multiple customers
@@ -33,7 +33,7 @@ hash.secret=changeme-C3z9vi54
 role.orgadmin.id=2
 
 # A path to a root directory for storing plugin files
-plugins.files.directory=/home/launcher/plugins
+plugins.files.directory=/home/hmdm/launcher/plugins
 
 # A path to a file to be created by the application initializer to signal on initialization completion
 initialization.completion.signal.file=/home/launcher/initialized.txt
@@ -45,10 +45,10 @@ aapt.command=aapt
 log4j.config=file:///log4j-hmdm.xml
 
 # The parameters specific to Device Log plugin
-plugin.devicelog.persistence.config.class=com.hmdm.plugins.devicelog.persistence.postgres.DeviceLogPostgresPersistenceConfiguration
+plugin.devicelog.persistence.config.class=com.hmdm.plugins.devicelog.persistence.mysql.DeviceLogMySQLPersistenceConfiguration
 
 # MQTT notification server local URI
-mqtt.server.uri=localhost:31000
+mqtt.server.uri=0.0.0.0:31000
 
 # MQTT authentication for more security (supported by Headwind MDM launcher v5.05 and above)
 mqtt.auth=true

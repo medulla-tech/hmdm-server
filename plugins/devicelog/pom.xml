@@ -39,7 +39,7 @@
 
     <modules>
         <module>core</module>
-        <module>postgres</module>
+        <module>mysql</module>
     </modules>
 
     <dependencies>

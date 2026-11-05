@@ -7,7 +7,7 @@ This instruction has been tested on Ubuntu Linux 18.04 LTS.
 
 1. Install required software
 
-# sudo apt install aapt tomcat8 postgresql
+# sudo apt install aapt tomcat8 mysql-server
 
 2. Make sure Tomcat is running
 
@@ -18,13 +18,14 @@ Escape character is '^]'.
 
 (if you get "Connection refused" error, fix the installation issue)
 
-3. Create the PostgreSQL database and user
+3. Create the MySQL database and user
 
-# sudo su postgres
-# psql
-postgres=# CREATE USER hmdm WITH PASSWORD 'topsecret';
-postgres=# CREATE DATABASE hmdm WITH OWNER=hmdm;
-postgres=# \q
+# sudo mysql -u root -p
+mysql> CREATE USER 'hmdm'@'localhost' IDENTIFIED BY 'topsecret';
+mysql> CREATE DATABASE hmdm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+mysql> GRANT ALL PRIVILEGES ON hmdm.* TO 'hmdm'@'localhost';
+mysql> FLUSH PRIVILEGES;
+mysql> EXIT;
 
 4. Run the installer script (as root)
 

@@ -35,11 +35,11 @@ import java.util.List;
  */
 public interface UsageStatsMapper {
 
-    @Insert({"INSERT INTO usageStats (instanceId, webVersion, community, devicesTotal, devicesOnline, " +
-             "cpuTotal, cpuUsed, ramTotal, ramUsed, scheme, arch, os) " +
-             "VALUES (#{instanceId}, #{webVersion}, #{community}, #{devicesTotal}, #{devicesOnline}, " +
-             "#{cpuTotal}, #{cpuUsed}, #{ramTotal}, #{ramUsed}, #{scheme}, #{arch}, #{os}) ON CONFLICT DO NOTHING"})
+    @Insert({"INSERT IGNORE INTO usagestats (instanceId, webVersion, community, devicesTotal, devicesOnline, " +
+         "cpuTotal, cpuUsed, ramTotal, ramUsed, scheme, arch, os) " +
+         "VALUES (#{instanceId}, #{webVersion}, #{community}, #{devicesTotal}, #{devicesOnline}, " +
+         "#{cpuTotal}, #{cpuUsed}, #{ramTotal}, #{ramUsed}, #{scheme}, #{arch}, #{os})"})
     @SelectKey( statement = "SELECT currval('usagestats_id_seq')", keyColumn = "id",
-            keyProperty = "id", before = false, resultType = int.class )
+        keyProperty = "id", before = false, resultType = int.class )
     void insert(UsageStats usageStats);
 }

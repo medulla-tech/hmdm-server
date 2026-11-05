@@ -89,32 +89,32 @@ public interface UserMapper {
     List<UserRole> findAllUserRoles(@Param("includeSuperAdmin") boolean inludeSuperAdmin);
 
     // Permissions not selected here
-    @Select("SELECT * FROM userRoles WHERE name = #{name}")
+    @Select("SELECT * FROM userroles WHERE name = #{name}")
     UserRole findUserRoleByName(@Param("name") String name);
 
-    @Delete({"DELETE FROM userDeviceGroupsAccess " +
+    @Delete({"DELETE FROM userdevicegroupsaccess " +
             "WHERE userId=#{id} " +
             "AND groupId IN (SELECT groups.id FROM groups WHERE groups.customerId=#{customerId})"})
     void removeDeviceGroupsAccessByUserId(@Param("customerId") int customerId, @Param("id") Integer userId);
 
     void insertUserDeviceGroupsAccess(@Param("id") Integer userId, @Param("groups") List<Integer> groups);
 
-    @Delete({"DELETE FROM userConfigurationAccess " +
+    @Delete({"DELETE FROM userconfigurationaccess " +
             "WHERE userId=#{id} " +
             "AND configurationId IN (SELECT configurations.id FROM configurations WHERE configurations.customerId=#{customerId})"})
     void removeConfigurationAccessByUserId(@Param("customerId") int customerId, @Param("id") Integer userId);
 
     void insertUserConfigurationAccess(@Param("id") Integer userId, @Param("configurations") List<Integer> configurations);
 
-    @Select("SELECT hintKey FROM userHints WHERE userId = #{id}")
+    @Select("SELECT hintKey FROM userhints WHERE userId = #{id}")
     List<String> getShownHints(@Param("id") Integer userId);
 
-    @Insert("INSERT INTO userHints (userId, hintKey) VALUES (#{userId}, #{hintKey})")
+    @Insert("INSERT INTO userhints (userId, hintKey) VALUES (#{userId}, #{hintKey})")
     int insertShownHint(@Param("userId") Integer userId, @Param("hintKey") String hintKey);
 
-    @Delete("DELETE FROM userHints WHERE userId = #{id}")
+    @Delete("DELETE FROM userhints WHERE userId = #{id}")
     int clearHintsHistory(@Param("id") Integer userId);
 
-    @Insert("INSERT INTO userHints (userId, hintKey) SELECT #{id}, hintKey FROM userHintTypes")
+    @Insert("INSERT INTO userhints (userId, hintKey) SELECT #{id}, hintKey FROM userhinttypes")
     int insertHintsHistoryAll(@Param("id") Integer userId);
 }

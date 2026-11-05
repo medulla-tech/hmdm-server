@@ -29,33 +29,38 @@
         logicalFilePath="notification.changelog.xml">
 
     <changeSet id="notification-07.06.2019-11:13" author="isv" context="common">
-        <comment>Create pushMessages table</comment>
+        <comment>Create pushmessages table</comment>
         <sql>
-            CREATE TABLE pushMessages (
-                id serial NOT NULL CONSTRAINT push_message_pr_key PRIMARY KEY,
+            CREATE TABLE pushmessages (
+                id INT NOT NULL AUTO_INCREMENT,
                 messageType VARCHAR(50) NOT NULL,
-                deviceId INT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
-                payload TEXT
-            );
+                deviceId INT NOT NULL,
+                payload TEXT,
+                CONSTRAINT push_message_pr_key PRIMARY KEY (id),
+                CONSTRAINT push_message_deviceId_fkey FOREIGN KEY (deviceId) REFERENCES devices(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE pushMessages;
+            DROP TABLE pushmessages;
         </rollback>
     </changeSet>
 
     <changeSet id="notification-07.06.2019-11:45" author="isv" context="common">
-        <comment>Create pendingPushes table</comment>
+        <comment>Create pendingpushes table</comment>
         <sql>
-            CREATE TABLE pendingPushes (
-                id serial NOT NULL CONSTRAINT pending_push_pr_key PRIMARY KEY,
-                messageId INT NOT NULL UNIQUE REFERENCES pushMessages( id ) ON DELETE CASCADE,
+            CREATE TABLE pendingpushes (
+                id INT NOT NULL AUTO_INCREMENT,
+                messageId INT NOT NULL,
                 status INT NOT NULL DEFAULT 0,
                 createTime BIGINT NOT NULL,
-                sendTime BIGINT
-            );
+                sendTime BIGINT,
+                CONSTRAINT pending_push_pr_key PRIMARY KEY (id),
+                CONSTRAINT pending_push_messageId_unq UNIQUE (messageId),
+                CONSTRAINT pending_push_messageId_fkey FOREIGN KEY (messageId) REFERENCES pushmessages(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE pendingPushes;
+            DROP TABLE pendingpushes;
         </rollback>
     </changeSet>
 

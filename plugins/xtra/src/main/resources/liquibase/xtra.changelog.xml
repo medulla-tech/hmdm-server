@@ -65,9 +65,9 @@
         <comment>Permission,new: plugin_xtra_access</comment>
         <sql>
             INSERT INTO permissions (name, description) VALUES ('plugin_xtra_access', 'Access to Premium version request plugin');
-            INSERT INTO userRolePermissions (roleId, permissionId) VALUES (1, currval('permissions_id_seq'));
-            INSERT INTO userRolePermissions (roleId, permissionId) VALUES (2, currval('permissions_id_seq'));
-            INSERT INTO userRolePermissions (roleId, permissionId) VALUES (3, currval('permissions_id_seq'));
+            INSERT INTO userrolepermissions (roleId, permissionId) VALUES (1, currval('permissions_id_seq'));
+            INSERT INTO userrolepermissions (roleId, permissionId) VALUES (2, currval('permissions_id_seq'));
+            INSERT INTO userrolepermissions (roleId, permissionId) VALUES (3, currval('permissions_id_seq'));
         </sql>
         <rollback>
             DELETE FROM permissions WHERE name = 'plugin_xtra_access';

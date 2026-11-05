@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmdm.plugins.devicelog.persistence.mysql.dao.mapper.MysqlDeviceLogMapper">
+
+    <resultMap id="settingsResult" type="MysqlDeviceLogPluginSettings">
+        <result property="id" column="settingsId"/>
+        <result property="customerId" column="customerId"/>
+        <result property="logsPreservePeriod" column="logsPreservePeriod"/>
+
+        <collection property="rules" ofType="com.hmdm.plugins.devicelog.persistence.mysql.dao.domain.MysqlDeviceLogRule">
+            <result property="id" column="ruleId"/>
+            <result property="name" column="ruleName"/>
+            <result property="active" column="ruleActive"/>
+            <result property="applicationId" column="ruleApplicationId"/>
+            <result property="severity" column="ruleSeverity"/>
+            <result property="filter" column="ruleFilter"/>
+            <result property="groupId" column="ruleGroupId"/>
+            <result property="configurationId" column="ruleConfigurationId"/>
+            <result property="applicationPkg" column="ruleApplicationPkg"/>
+            <result property="groupName" column="ruleGroupName"/>
+            <result property="configurationName" column="ruleConfigurationName"/>
+            <result property="settingId" column="settingsId"/>
+
+            <collection property="devices" ofType="com.hmdm.rest.json.LookupItem">
+                <result property="id" column="ruleDeviceId"/>
+                <result property="name" column="ruleDeviceNumber"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="findPluginSettingsByCustomerId" resultMap="settingsResult" >
+        SELECT settings.id AS settingsId,
+               settings.customerId AS customerId,
+               settings.logspreserveperiod AS logsPreservePeriod,
+               rules.id AS ruleId,
+               rules.name AS ruleName,
+               rules.active AS ruleActive,
+               rules.applicationid AS ruleApplicationId,
+               rules.severity AS ruleSeverity,
+               rules.filter AS ruleFilter,
+               rules.groupid AS ruleGroupId,
+               rules.configurationId AS ruleConfigurationId,
+               a.pkg AS ruleApplicationPkg,
+               g.name AS ruleGroupName,
+               c.name AS ruleConfigurationName,
+               d.id AS ruleDeviceId,
+               d.number AS ruleDeviceNumber
+        FROM plugin_devicelog_settings settings
+        LEFT JOIN plugin_devicelog_settings_rules rules ON rules.settingid = settings.id
+        LEFT JOIN applications a on rules.applicationid = a.id
+        LEFT JOIN configurations c on rules.configurationid = c.id
+        LEFT JOIN groups g on rules.groupid = g.id
+        LEFT JOIN plugin_devicelog_setting_rule_devices ruleDevices ON ruleDevices.ruleid = rules.id
+        LEFT JOIN devices d on ruleDevices.deviceid = d.id
+        WHERE settings.customerid = #{customerId}
+        ORDER BY rules.name
+    </select>
+
+
+    <select id="findAllLogRecordsByCustomerId"
+            parameterType="com.hmdm.plugins.devicelog.rest.json.DeviceLogFilter"
+            resultType="MysqlDeviceLogRecord">
+        SELECT data.*, devices.number AS deviceNumber, applications.pkg AS applicationPkg
+        FROM plugin_devicelog_log data
+        INNER JOIN devices ON devices.id = data.deviceid
+        INNER JOIN users ON users.id = #{userId}
+        LEFT JOIN applications ON applications.id = data.applicationId
+        WHERE devices.customerId = #{customerId}
+        AND (users.allDevicesAvailable = TRUE
+        OR
+        EXISTS(SELECT 1
+        FROM devicegroups
+        INNER JOIN userdevicegroupsaccess access ON devicegroups.groupId = access.groupId AND access.userId = users.id
+        WHERE devices.id = devicegroups.deviceId
+        )
+        )
+        <if test="deviceFilter != null">
+            AND (
+            devices.number LIKE #{deviceFilter}
+            )
+        </if>
+        <if test="applicationFilter != null">
+            AND (
+            applications.pkg LIKE #{applicationFilter}
+            )
+        </if>
+        <if test="severity != null">
+            <if test="severity != -1">
+                AND (
+                data.severityOrder &lt;= #{severity}
+                )
+            </if>
+        </if>
+        <if test="messageFilter != null">
+            AND (
+            data.message LIKE #{messageFilter}
+            )
+        </if>
+        <if test="dateFrom != null">
+            AND ( data.createTime &gt;= #{dateFromMillis} )
+        </if>
+        <if test="dateTo != null">
+            AND ( data.createTime &lt;= #{dateToMillis} )
+        </if>
+
+        <if test="sortValue.equals('createTime')">
+            <if test="export == true">
+                ORDER BY data.createTime ASC
+            </if>
+            <if test="export == false">
+                ORDER BY data.createTime DESC
+            </if>
+        </if>
+        <if test="sortValue.equals('deviceNumber')">
+            <if test="export == true">
+                ORDER BY devices.number ASC, data.createTime ASC
+            </if>
+            <if test="export == false">
+                ORDER BY devices.number ASC, data.createTime DESC
+            </if>
+        </if>
+        <bind name="offset" value="(pageNum - 1) * pageSize"/>
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countAll"
+            parameterType="com.hmdm.plugins.devicelog.rest.json.DeviceLogFilter"
+            resultType="long">
+        SELECT COUNT(*) AS counter
+        FROM plugin_devicelog_log data
+        INNER JOIN devices ON devices.id = data.deviceid
+        INNER JOIN users ON users.id = #{userId}
+        LEFT JOIN applications ON applications.id = data.applicationId
+        WHERE devices.customerId = #{customerId}
+        AND (users.allDevicesAvailable = TRUE
+        OR
+        EXISTS(SELECT 1
+        FROM devicegroups
+        INNER JOIN userdevicegroupsaccess access ON devicegroups.groupId = access.groupId AND access.userId = users.id
+        WHERE devices.id = devicegroups.deviceId
+        )
+        )
+        <if test="deviceFilter != null">
+            AND (
+            devices.number LIKE #{deviceFilter}
+            )
+        </if>
+        <if test="applicationFilter != null">
+            AND (
+            applications.pkg LIKE #{applicationFilter}
+            )
+        </if>
+        <if test="severity != null">
+            <if test="severity != -1">
+                AND (
+                data.severityOrder &lt;= #{severity}
+                )
+            </if>
+        </if>
+        <if test="messageFilter != null">
+            AND (
+            data.message LIKE #{messageFilter}
+            )
+        </if>
+        <if test="dateFrom != null">
+            AND ( data.createTime &gt;= #{dateFromMillis} )
+        </if>
+        <if test="dateTo != null">
+            AND ( data.createTime &lt;= #{dateToMillis} )
+        </if>
+    </select>
+
+    <insert id="insertDeviceLogRecords">
+        INSERT INTO plugin_devicelog_log (createTime, customerId, deviceId, applicationId, ipAddress, severity, severityOrder, message)
+        VALUES
+        <foreach item="item" index="index" collection="logs"
+                 open="" separator="," close="">
+            (#{item.createTime}, #{item.customerId}, #{item.deviceId}, #{item.applicationId}, #{item.ipAddress}, #{item.severity}, #{item.severity.id}, #{item.message})
+        </foreach>
+    </insert>
+
+    <insert id="insertPluginSettingsRuleDevices">
+        INSERT INTO plugin_devicelog_setting_rule_devices (ruleId, deviceId)
+        VALUES
+        <foreach item="item" index="index" collection="deviceIds"
+                 open="" separator="," close="">
+            (#{ruleId}, #{item})
+        </foreach>
+    </insert>
+
+</mapper>

@@ -34,38 +34,38 @@ import java.util.List;
  */
 public interface UploadedFileMapper {
 
-    @Insert("INSERT INTO uploadedFiles (customerId, filePath, description, uploadTime, devicePath, " +
+    @Insert("INSERT INTO uploadedfiles (customerId, filePath, description, uploadTime, devicePath, " +
             "external, externalUrl, replaceVariables) " +
             "VALUES (#{customerId}, #{filePath}, #{description}, #{uploadTime}, #{devicePath}, " +
             "#{external}, #{externalUrl}, #{replaceVariables})")
     @SelectKey(statement = "SELECT currval('uploadedfiles_id_seq')", keyColumn = "id", keyProperty = "id", before = false, resultType = int.class)
     int insert(UploadedFile file);
 
-    @Update({"UPDATE uploadedFiles " +
+    @Update({"UPDATE uploadedfiles " +
             "SET filePath = #{filePath}, description=#{description}, uploadTime=#{uploadTime}, " +
             "devicePath=#{devicePath}, external=#{external}, externalUrl=#{externalUrl}, replaceVariables=#{replaceVariables} " +
             "WHERE id=#{id}"})
     void update(UploadedFile file);
 
 
-    @Select("SELECT * FROM uploadedFiles " +
+    @Select("SELECT * FROM uploadedfiles " +
             "WHERE customerId = #{customerId} " +
             "ORDER BY filePath")
     List<UploadedFile> getAll(@Param("customerId") int customerId);
 
-    @Select("SELECT * FROM uploadedFiles " +
-            "WHERE customerId = #{customerId} AND (filePath ILIKE #{value} OR description ILIKE #{value} OR externalUrl ILIKE #{value}) " +
+    @Select("SELECT * FROM uploadedfiles " +
+            "WHERE customerId = #{customerId} AND (filePath LIKE #{value} OR description LIKE #{value} OR externalUrl LIKE #{value}) " +
             "ORDER BY filePath")
     List<UploadedFile> getAllByValue(@Param("customerId") int customerId,
                               @Param("value") String value);
 
-    @Select("SELECT * FROM uploadedFiles WHERE id = #{id}")
+    @Select("SELECT * FROM uploadedfiles WHERE id = #{id}")
     UploadedFile findById(@Param("id") Integer id);
 
-    @Select("SELECT * FROM uploadedFiles WHERE customerId = #{customerId} AND filePath = #{filePath} LIMIT 1")
+    @Select("SELECT * FROM uploadedfiles WHERE customerId = #{customerId} AND filePath = #{filePath} LIMIT 1")
     UploadedFile findByPath(@Param("customerId") Integer customerId, @Param("filePath") String filePath);
 
-    @Select("SELECT * FROM uploadedFiles WHERE customerId = #{customerId} AND " +
+    @Select("SELECT * FROM uploadedfiles WHERE customerId = #{customerId} AND " +
             "    description IS NOT DISTINCT FROM #{description} AND " +
             "    filePath IS NOT DISTINCT FROM #{filePath} AND " +
             "    devicePath IS NOT DISTINCT FROM #{devicePath} AND " +
@@ -80,22 +80,22 @@ public interface UploadedFileMapper {
                           @Param("externalUrl") String externalUrl,
                           @Param("replaceVariables") boolean replaceVariables);
 
-    @Delete("DELETE FROM uploadedFiles WHERE id = #{id}")
+    @Delete("DELETE FROM uploadedfiles WHERE id = #{id}")
     void delete(@Param("id") int fileId);
 
-    @Select("SELECT f.* FROM uploadedFiles f LEFT JOIN configurationFiles cf ON cf.fileId = f.id " +
+    @Select("SELECT f.* FROM uploadedfiles f LEFT JOIN configurationfiles cf ON cf.fileId = f.id " +
             "WHERE cf.fileId IS NULL AND f.customerId=#{customerId}")
     List<UploadedFile> findOrphaned(@Param("customerId") Integer customerId);
 
     @Select("SELECT COUNT(*) AS cnt " +
-            "FROM uploadedFiles " +
+            "FROM uploadedfiles " +
             "WHERE NOT external AND filePath=#{filePath} AND id != #{id} AND customerId=#{customerId}")
     long countUploadedDuplicates(@Param("id") Integer id,
                                  @Param("customerId") Integer customerId,
                                  @Param("filePath") String filePath);
 
     @Select("SELECT COUNT(*) AS cnt " +
-            "FROM uploadedFiles " +
+            "FROM uploadedfiles " +
             "WHERE external AND externalUrl=#{externalUrl} AND id != #{id} AND customerId=#{customerId}")
     long countExternalDuplicates(@Param("id") Integer id,
                                  @Param("customerId") Integer customerId,

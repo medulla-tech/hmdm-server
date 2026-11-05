@@ -308,7 +308,7 @@ angular.module('headwind-kiosk')
         };
     })
     .controller('ConfigurationEditorController',
-        function ($scope, configurationService, settingsService, $stateParams, $state, $rootScope, $window, $timeout,
+        function ($scope, configurationService, applicationService, settingsService, $stateParams, $state, $rootScope, $window, $timeout,
                   $transitions, localization, confirmModal, alertService, $modal, appVersionComparisonService, settingsService) {
 
             $scope.successMessage = null;
@@ -550,28 +550,23 @@ angular.module('headwind-kiosk')
             };
 
             var getAppSettingsApps = function (filter) {
-                var lower = filter.toLowerCase();
-                var apps = allApplications.filter(function (app) {
-                    // Intentionally using app.action == 1 but not app.action === 1
-                    return app.type === 'app' && (app.name.toLowerCase().indexOf(lower) > -1
-                        || app.pkg && app.pkg.toLowerCase().indexOf(lower) > -1
-                        || app.version && app.version.toLowerCase().indexOf(lower) > -1);
-                });
-
-                apps.sort(function (a, b) {
-                    let n1 = a.name.toLowerCase();
-                    let n2 = b.name.toLowerCase();
-
-                    if (n1 === n2) {
-                        return 0;
-                    } else if (n1 < n2) {
-                        return -1;
-                    } else {
-                        return 1;
+                return applicationService.getAllApplications({value: filter}).$promise.then(function (response) {
+                    if (response.status === 'OK') {
+                        var lower = filter.toLowerCase();
+                        var apps = (response.data || []).filter(function (app) {
+                            return app.type === 'app' && (app.name.toLowerCase().indexOf(lower) > -1
+                                || app.pkg && app.pkg.toLowerCase().indexOf(lower) > -1);
+                        });
+                        apps.sort(function (a, b) {
+                            let n1 = a.name.toLowerCase();
+                            let n2 = b.name.toLowerCase();
+                            if (n1 === n2) { return 0; }
+                            return n1 < n2 ? -1 : 1;
+                        });
+                        return apps;
                     }
+                    return [];
                 });
-
-                return apps;
             };
 
             $scope.getAppSettingsApps = getAppSettingsApps;
@@ -851,6 +846,7 @@ angular.module('headwind-kiosk')
                     if (!applicationSetting.id) {
                         applicationSetting.tempId = new Date().getTime();
                         $scope.configuration.applicationSettings.push(applicationSetting);
+                        $scope.configurationForm.$dirty = true;
                         filterApplicationSettings();
                     }
                 });
@@ -1267,11 +1263,11 @@ angular.module('headwind-kiosk')
             }
 
             var d1 = new Date();
-            d1.setHours(01);
+            d1.setHours(0o1);
             d1.setMinutes(0);
 
             var d2 = new Date();
-            d2.setHours(05);
+            d2.setHours(0o5);
             d2.setMinutes(59);
 
             $scope.dates = {};

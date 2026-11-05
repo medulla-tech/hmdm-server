@@ -41,17 +41,17 @@
             tasks.customerId = #{customerId}
         <if test="messageFilter != null">
             AND (
-            tasks.messageType ILIKE #{messageFilter} OR
-            tasks.payload ILIKE #{messageFilter} OR
-            tasks.comment ILIKE #{messageFilter} OR
-            devices.number ILIKE #{messageFilter} OR
-            groups.name ILIKE #{messageFilter} OR
-            configurations.name ILIKE #{messageFilter}
+            tasks.messageType LIKE #{messageFilter} OR
+            tasks.payload LIKE #{messageFilter} OR
+            tasks.comment LIKE #{messageFilter} OR
+            devices.number LIKE #{messageFilter} OR
+            groups.name LIKE #{messageFilter} OR
+            configurations.name LIKE #{messageFilter}
             )
         </if>
         ORDER BY id
-        OFFSET (#{pageNum} - 1) * #{pageSize}
-        LIMIT #{pageSize}
+        <bind name="offset" value="(pageNum - 1) * pageSize"/>
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="countAll"
@@ -65,12 +65,12 @@
         tasks.customerId = #{customerId}
         <if test="messageFilter != null">
             AND (
-            tasks.messageType ILIKE #{messageFilter} OR
-            tasks.payload ILIKE #{messageFilter} OR
-            tasks.comment ILIKE #{messageFilter} OR
-            devices.number ILIKE #{messageFilter} OR
-            groups.name ILIKE #{messageFilter} OR
-            configurations.name ILIKE #{messageFilter}
+            tasks.messageType LIKE #{messageFilter} OR
+            tasks.payload LIKE #{messageFilter} OR
+            tasks.comment LIKE #{messageFilter} OR
+            devices.number LIKE #{messageFilter} OR
+            groups.name LIKE #{messageFilter} OR
+            configurations.name LIKE #{messageFilter}
             )
         </if>
     </select>

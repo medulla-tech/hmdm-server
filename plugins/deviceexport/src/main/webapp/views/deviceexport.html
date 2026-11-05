@@ -1,0 +1,141 @@
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<div class="ng-scope" ng-controller="PluginDeviceExportController">
+
+    <!-- ======================================================= -->
+    <!-- EXPORT PANEL                                             -->
+    <!-- ======================================================= -->
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>Export Devices to CSV</strong></div>
+        <div class="panel-body">
+
+            <div class="alert alert-danger" ng-if="exportError">{{exportError}}</div>
+
+            <!-- Filters -->
+            <div class="form-horizontal">
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Search</label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" ng-model="filter.text"
+                               placeholder="Device number or description…">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Group</label>
+                    <div class="col-sm-4">
+                        <select class="form-control"
+                                ng-model="filter.groupId"
+                                ng-options="g.id as g.name for g in groups">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">Configuration</label>
+                    <div class="col-sm-4">
+                        <select class="form-control"
+                                ng-model="filter.configurationId"
+                                ng-options="c.id as c.name for c in configurations">
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Column selection -->
+            <div class="form-group">
+                <label class="col-sm-2 control-label" style="padding-top:0">Columns</label>
+                <div class="col-sm-10">
+                    <div style="margin-bottom:6px">
+                        <button class="btn btn-xs btn-default" ng-click="selectAllColumns()">Select all</button>
+                        &nbsp;
+                        <button class="btn btn-xs btn-default" ng-click="clearAllColumns()">Clear all</button>
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:4px 20px;">
+                        <div ng-repeat="col in allColumns" style="min-width:180px">
+                            <label style="font-weight:normal; cursor:pointer">
+                                <input type="checkbox" ng-model="col.selected">
+                                {{col.label}}
+                                <span ng-if="col.readonly" class="text-muted" style="font-size:11px">(read-only)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <p class="help-block" style="margin-top:6px">
+                        "Device Number" is always exported as the first column and is required for importing.
+                        Read-only columns are exported but ignored during import.
+                    </p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button class="btn btn-primary" ng-click="doExport()" ng-disabled="exportBusy">
+                        <span ng-if="exportBusy" class="glyphicon glyphicon-refresh spinning"></span>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- IMPORT PANEL                                             -->
+    <!-- ======================================================= -->
+    <div class="panel panel-default" style="margin-top:20px">
+        <div class="panel-heading"><strong>Import Devices from CSV</strong></div>
+        <div class="panel-body">
+
+            <div class="alert alert-danger"  ng-if="importError">{{importError}}</div>
+
+            <div class="alert alert-success" ng-if="importResult && importResult.errors.length === 0">
+                Import complete: <strong>{{importResult.created}}</strong> created,
+                <strong>{{importResult.updated}}</strong> updated,
+                <strong>{{importResult.skipped}}</strong> skipped.
+            </div>
+            <div class="alert alert-warning" ng-if="importResult && importResult.errors.length > 0">
+                Import complete with warnings:
+                <strong>{{importResult.created}}</strong> created,
+                <strong>{{importResult.updated}}</strong> updated,
+                <strong>{{importResult.skipped}}</strong> skipped.
+                <ul style="margin-top:6px; padding-left:18px">
+                    <li ng-repeat="err in importResult.errors">{{err}}</li>
+                </ul>
+            </div>
+
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">CSV File</label>
+                    <div class="col-sm-6">
+                        <input type="file" class="form-control" accept=".csv" file-model="importFile">
+                        <p class="help-block">
+                            Select a CSV file exported by this plugin. The first row must contain column headers.<br>
+                            Writable columns: <code>number</code>, <code>description</code>, <code>configuration</code>,
+                            <code>imei</code>, <code>phone</code>, <code>groups</code>,
+                            <code>custom1</code>, <code>custom2</code>, <code>custom3</code>.<br>
+                            New devices require a <code>configuration</code> value. Existing devices are updated by matching <code>number</code>.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <button class="btn btn-success" ng-click="doImport()" ng-disabled="importBusy || !importFile">
+                            <span ng-if="importBusy" class="glyphicon glyphicon-refresh spinning"></span>
+                            Import
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>

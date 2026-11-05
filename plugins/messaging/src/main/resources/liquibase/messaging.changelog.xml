@@ -67,12 +67,12 @@
         <comment>Permission,new: plugin_messaging_send, plugin_messaging_delete</comment>
         <sql>
             INSERT INTO permissions (name, description) VALUES ('plugin_messaging_send', 'Can send messages to devices');
-            INSERT INTO userRolePermissions (roleId, permissionId)
+            INSERT INTO userrolepermissions (roleId, permissionId)
             SELECT id, currval('permissions_id_seq')
             FROM userroles;
             INSERT INTO permissions (name, description) VALUES ('plugin_messaging_delete', 'Can delete and update message history');
-            INSERT INTO userRolePermissions (roleId, permissionId) VALUES (1, currval('permissions_id_seq'));
-            INSERT INTO userRolePermissions (roleId, permissionId) VALUES (2, currval('permissions_id_seq'));
+            INSERT INTO userrolepermissions (roleId, permissionId) VALUES (1, currval('permissions_id_seq'));
+            INSERT INTO userrolepermissions (roleId, permissionId) VALUES (2, currval('permissions_id_seq'));
         </sql>
         <rollback>
             DELETE FROM permissions WHERE name = 'plugin_messaging_send';
@@ -84,13 +84,16 @@
         <comment>Table,new: plugin_messaging_messages</comment>
         <sql>
             CREATE TABLE plugin_messaging_messages (
-                id serial NOT NULL CONSTRAINT plugin_messaging_messages_pr_key PRIMARY KEY,
-                customerId INT NOT NULL REFERENCES customers (id) ON DELETE CASCADE,
-                deviceId INT NOT NULL REFERENCES devices (id) ON DELETE CASCADE,
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                deviceId INT NOT NULL,
                 ts BIGINT NOT NULL,
                 message VARCHAR(5000),
-                status INT NOT NULL
-            );
+                status INT NOT NULL,
+                CONSTRAINT plugin_messaging_messages_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_messaging_messages_customerId_fkey FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE,
+                CONSTRAINT plugin_messaging_messages_deviceId_fkey FOREIGN KEY (deviceId) REFERENCES devices(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
             DROP TABLE plugin_messaging_messages;

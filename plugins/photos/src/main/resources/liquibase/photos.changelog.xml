@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd"
+        logicalFilePath="photos.changelog.xml">
+
+    <changeSet id="plugin-photos-19.03.2026-01" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM plugins WHERE identifier = 'photos'</sqlCheck>
+        </preConditions>
+        <comment>Plugin,new: photos</comment>
+        <sql>
+            INSERT INTO plugins (
+                identifier, name, description,
+                javascriptModuleFile,
+                functionsViewTemplate,
+                settingsViewTemplate,
+                namelocalizationkey,
+                settingsPermission, functionsPermission, deviceFunctionsPermission,
+                enabledForDevice
+            ) VALUES (
+                'photos', 'Photos', 'Upload and manage photos from devices',
+                'app/components/plugins/photos/photos.module.js',
+                'app/components/plugins/photos/views/photos.html',
+                'app/components/plugins/photos/views/settings.html',
+                'plugin.photos.name',
+                'plugin_photos_access',
+                'plugin_photos_access',
+                'plugin_photos_access',
+                TRUE
+            );
+        </sql>
+        <rollback>
+            DELETE FROM plugins WHERE identifier = 'photos';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-photos-19.03.2026-02" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM permissions WHERE name = 'plugin_photos_access'</sqlCheck>
+        </preConditions>
+        <comment>Permission,new: plugin_photos_access</comment>
+        <sql>
+            INSERT INTO permissions (name, description) VALUES ('plugin_photos_access', 'Access to photos plugin');
+            INSERT INTO userrolepermissions (roleId, permissionId)
+                SELECT id, currval('permissions_id_seq')
+                FROM userroles;
+        </sql>
+        <rollback>
+            DELETE FROM permissions WHERE name = 'plugin_photos_access';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-photos-19.03.2026-03" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_photos_settings"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_photos_settings</comment>
+        <sql>
+            CREATE TABLE plugin_photos_settings (
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                transferPhotos BOOLEAN NOT NULL DEFAULT FALSE,
+                imagePaths VARCHAR(2000) NOT NULL DEFAULT '',
+                excludePaths VARCHAR(2000) NOT NULL DEFAULT '',
+                includeStandardPaths BOOLEAN NOT NULL DEFAULT TRUE,
+                nonImageExtensions VARCHAR(500) NOT NULL DEFAULT '',
+                directoryStructure VARCHAR(500) NOT NULL DEFAULT 'DEVICE/YEAR/MONTH/',
+                fileNameTemplate VARCHAR(500) NOT NULL DEFAULT 'img_YEAR_MONTH_DAY_HOUR_MIN_SEC_NAME',
+                removeOldFiles INT NOT NULL DEFAULT 30,
+                deleteImagesOnDevices VARCHAR(100) NOT NULL DEFAULT '',
+                imageLocation BOOLEAN NOT NULL DEFAULT FALSE,
+                disableLocationWarning VARCHAR(500) NOT NULL DEFAULT '',
+                addLabel BOOLEAN NOT NULL DEFAULT FALSE,
+                labelColor VARCHAR(50) NOT NULL DEFAULT '#ffffff',
+                backgroundColor VARCHAR(50) NOT NULL DEFAULT '',
+                transparency INT NOT NULL DEFAULT 80,
+                labelText VARCHAR(500) NOT NULL DEFAULT 'DATE TIME ADDRESS',
+                CONSTRAINT plugin_photos_settings_pk PRIMARY KEY (id),
+                CONSTRAINT plugin_photos_settings_customer_fk FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE,
+                CONSTRAINT plugin_photos_settings_customer_uniq UNIQUE (customerId)
+            ) ENGINE=InnoDB;
+        </sql>
+        <rollback>
+            DROP TABLE plugin_photos_settings;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-photos-19.03.2026-04" author="custom" context="common">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="plugin_photos_files"/></not>
+        </preConditions>
+        <comment>Table,new: plugin_photos_files</comment>
+        <sql>
+            CREATE TABLE plugin_photos_files (
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                deviceNumber VARCHAR(100) NOT NULL,
+                serverPath VARCHAR(2000) NOT NULL,
+                originalName VARCHAR(500) NOT NULL,
+                uploadTs BIGINT NOT NULL,
+                lat DOUBLE,
+                lon DOUBLE,
+                address VARCHAR(1000),
+                CONSTRAINT plugin_photos_files_pk PRIMARY KEY (id),
+                CONSTRAINT plugin_photos_files_customer_fk FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+            CREATE INDEX plugin_photos_files_customer_device_idx ON plugin_photos_files (customerId, deviceNumber);
+            CREATE INDEX plugin_photos_files_ts_idx ON plugin_photos_files (uploadTs);
+        </sql>
+        <rollback>
+            DROP INDEX plugin_photos_files_ts_idx ON plugin_photos_files;
+            DROP INDEX plugin_photos_files_customer_device_idx ON plugin_photos_files;
+            DROP TABLE plugin_photos_files;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

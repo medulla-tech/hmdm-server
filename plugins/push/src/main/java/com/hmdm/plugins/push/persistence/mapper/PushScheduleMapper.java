@@ -41,9 +41,7 @@ public interface PushScheduleMapper {
             "min, minBit, hour, hourBit, day, dayBit, weekday, weekdayBit, month, monthBit) " +
             "VALUES " +
             "(#{customerId}, #{deviceId}, #{groupId}, #{configurationId}, #{scope}, #{messageType}, #{payload}, #{comment}, " +
-            "#{min}, CAST(#{minBit} AS BIT(60)), #{hour}, CAST(#{hourBit} AS BIT(24)), " +
-            "#{day}, CAST(#{dayBit} AS BIT(31)), #{weekday}, CAST(#{weekdayBit} AS BIT(7)), " +
-            "#{month}, CAST(#{monthBit} AS BIT(12)))"
+            "#{min}, #{minBit}, #{hour}, #{hourBit}, #{day}, #{dayBit}, #{weekday}, #{weekdayBit}, #{month}, #{monthBit})"
     )
     @SelectKey( statement = "SELECT currval('plugin_push_schedule_id_seq')",
             keyColumn = "id", keyProperty = "id", before = false, resultType = int.class )
@@ -52,9 +50,9 @@ public interface PushScheduleMapper {
     @Update("UPDATE plugin_push_schedule " +
             "SET deviceId=#{deviceId}, groupId=#{groupId}, configurationId=#{configurationId}, " +
             "scope=#{scope}, messageType=#{messageType}, payload=#{payload}, comment=#{comment}, " +
-            "min=#{min}, minBit=CAST(#{minBit} AS BIT(60)), hour=#{hour}, hourBit=CAST(#{hourBit} AS BIT(24)), " +
-            "day=#{day}, dayBit=CAST(#{dayBit} AS BIT(31)), weekday=#{weekday}, weekdayBit=CAST(#{weekdayBit} AS BIT(7)), " +
-            "month=#{month}, monthBit=CAST(#{monthBit} AS BIT(12)) " +
+            "min=#{min}, minBit=#{minBit}, hour=#{hour}, hourBit=#{hourBit}, " +
+            "day=#{day}, dayBit=#{dayBit}, weekday=#{weekday}, weekdayBit=#{weekdayBit}, " +
+            "month=#{month}, monthBit=#{monthBit} " +
             "WHERE id=#{id} AND customerId=#{customerId}"
     )
     int update(PluginPushSchedule msg);
@@ -63,17 +61,17 @@ public interface PushScheduleMapper {
     void delete(@Param("id") int id, @Param("customerId") int customerId);
 
     @Select("SELECT * FROM plugin_push_schedule WHERE " +
-            "(minBit & CAST(#{minMask} AS BIT(60))) = CAST(#{minMask} AS BIT(60)) AND " +
-            "(hourBit & CAST(#{hourMask} AS BIT(24))) = CAST(#{hourMask} AS BIT(24)) AND " +
-            "(dayBit & CAST(#{dayMask} AS BIT(31))) = CAST(#{dayMask} AS BIT(31)) AND " +
-            "(weekdayBit & CAST(#{weekdayMask} AS BIT(7))) = CAST(#{weekdayMask} AS BIT(7)) AND " +
-            "(monthBit & CAST(#{monthMask} AS BIT(12))) = CAST(#{monthMask} AS BIT(12))"
+            "(minBit & #{minMask}) = #{minMask} AND " +
+            "(hourBit & #{hourMask}) = #{hourMask} AND " +
+            "(dayBit & #{dayMask}) = #{dayMask} AND " +
+            "(weekdayBit & #{weekdayMask}) = #{weekdayMask} AND " +
+            "(monthBit & #{monthMask}) = #{monthMask}"
     )
-    List<PluginPushSchedule> findMatchingTime(@Param("minMask") String minMask,
-                                             @Param("hourMask") String hourMask,
-                                             @Param("dayMask") String dayMask,
-                                             @Param("weekdayMask") String weekdayMask,
-                                             @Param("monthMask") String monthMask);
+    List<PluginPushSchedule> findMatchingTime(@Param("minMask") long minMask,
+                                            @Param("hourMask") int hourMask,
+                                            @Param("dayMask") int dayMask,
+                                            @Param("weekdayMask") int weekdayMask,
+                                            @Param("monthMask") int monthMask);
 
     List<PluginPushSchedule> findAll(PushScheduleFilter filter);
 

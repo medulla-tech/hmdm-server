@@ -59,21 +59,23 @@
             );
 
             INSERT INTO permissions (name, description) VALUES ('plugin_push_send', 'Can send push messages to devices');
-            INSERT INTO userRolePermissions (roleId, permissionId)
+            INSERT INTO userrolepermissions (roleId, permissionId)
             SELECT id, currval('permissions_id_seq')
             FROM userroles;
             INSERT INTO permissions (name, description) VALUES ('plugin_push_delete', 'Can delete and update Push message history');
-            INSERT INTO userRolePermissions (roleId, permissionId) VALUES (1, currval('permissions_id_seq'));
-            INSERT INTO userRolePermissions (roleId, permissionId) VALUES (2, currval('permissions_id_seq'));
-
+            INSERT INTO userrolepermissions (roleId, permissionId) VALUES (1, currval('permissions_id_seq'));
+            INSERT INTO userrolepermissions (roleId, permissionId) VALUES (2, currval('permissions_id_seq'));
             CREATE TABLE plugin_push_messages (
-                id serial NOT NULL CONSTRAINT plugin_push_messages_pr_key PRIMARY KEY,
-                customerId INT NOT NULL REFERENCES customers (id) ON DELETE CASCADE,
-                deviceId INT NOT NULL REFERENCES devices (id) ON DELETE CASCADE,
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                deviceId INT NOT NULL,
                 ts BIGINT NOT NULL,
                 messageType VARCHAR(255),
-                payload TEXT
-            );
+                payload TEXT,
+                CONSTRAINT plugin_push_messages_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_push_messages_customerId_fkey FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE,
+                CONSTRAINT plugin_push_messages_deviceId_fkey FOREIGN KEY (deviceId) REFERENCES devices(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
             DELETE FROM plugins WHERE identifier = 'push';
@@ -87,26 +89,28 @@
         <comment>Table, new: plugin_push_schedule</comment>
         <sql>
             CREATE TABLE plugin_push_schedule (
-            id serial NOT NULL CONSTRAINT plugin_push_schedule_pr_key PRIMARY KEY,
-            customerId INT NOT NULL REFERENCES customers (id) ON DELETE CASCADE,
-            deviceId INT NOT NULL DEFAULT 0,
-            groupId INT NOT NULL DEFAULT 0,
-            configurationId INT NOT NULL DEFAULT 0,
-            scope VARCHAR(255),
-            messageType VARCHAR(255),
-            payload TEXT,
-            comment TEXT,
-            min VARCHAR(1024),
-            minBit BIT(60),
-            hour VARCHAR(1024),
-            hourBit BIT(24),
-            day VARCHAR(1024),
-            dayBit BIT(31),
-            weekday VARCHAR(1024),
-            weekdayBit BIT(7),
-            month VARCHAR(1024),
-            monthBit BIT(12)
-            );
+                id INT NOT NULL AUTO_INCREMENT,
+                customerId INT NOT NULL,
+                deviceId INT NOT NULL DEFAULT 0,
+                groupId INT NOT NULL DEFAULT 0,
+                configurationId INT NOT NULL DEFAULT 0,
+                scope VARCHAR(255),
+                messageType VARCHAR(255),
+                payload TEXT,
+                comment TEXT,
+                min VARCHAR(1024),
+                minBit BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                hour VARCHAR(1024),
+                hourBit INT UNSIGNED NOT NULL DEFAULT 0,
+                day VARCHAR(1024),
+                dayBit INT UNSIGNED NOT NULL DEFAULT 0,
+                weekday VARCHAR(1024),
+                weekdayBit TINYINT UNSIGNED NOT NULL DEFAULT 0,
+                month VARCHAR(1024),
+                monthBit SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+                CONSTRAINT plugin_push_schedule_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_push_schedule_customerId_fkey FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
             DROP TABLE plugin_push_schedule;

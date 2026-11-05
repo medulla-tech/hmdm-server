@@ -1,0 +1,119 @@
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<!-- Localization completed -->
+<div class="width-1000" ng-controller="PluginPhotosController">
+    <div class="text-center">
+        <h4 localized>plugin.photos.browse.title</h4>
+    </div>
+
+    <div>
+        <div class='form-group'>
+            <div ng-show='errorMessage' class='error'><span>{{errorMessage}}</span></div>
+        </div>
+
+        <div class="form-group">
+            <div class='col-sm-3'>
+                <input type='text' ng-model='paging.deviceNumber' ng-enter='search()'
+                       localized-placeholder='plugin.photos.browse.filter.device'
+                       class='form-control'/>
+            </div>
+            <div class='col-sm-2'>
+                <div class='min-padding date-picker date-picker-input'>
+                    <input class='form-control' datepicker-popup='{{dateFormat}}' localized-placeholder="search.placeholder.from"
+                           ng-model='paging.dateFrom' is-open='openDatePickers.dateFrom' show-button-bar='false'
+                           datepicker-options='datePickerOptions'/>
+                </div>
+                <div class='min-padding date-picker date-picker-button'>
+                    <button type='button' class='btn btn-default' ng-click='openDateCalendar($event, true)'>
+                        <span class='glyphicon glyphicon-calendar'></span>
+                    </button>
+                </div>
+            </div>
+            <div class='col-sm-2'>
+                <div class='min-padding date-picker date-picker-input'>
+                    <input class='form-control' datepicker-popup='{{dateFormat}}' localized-placeholder="search.placeholder.to"
+                           ng-model='paging.dateTo' is-open='openDatePickers.dateTo' show-button-bar='false'
+                           datepicker-options='datePickerOptions'/>
+                </div>
+                <div class='min-padding date-picker date-picker-button'>
+                    <button type='button' class='btn btn-default' ng-click='openDateCalendar($event, false)'>
+                        <span class='glyphicon glyphicon-calendar'></span>
+                    </button>
+                </div>
+            </div>
+            <div class='col-sm-2 text-right'>
+                <button type='button' class='btn btn-default' ng-click='search()' localized>button.search</button>
+            </div>
+        </div>
+
+        <br/>
+        <br/>
+        <br/>
+
+        <div class="text-center" ng-if="paging.totalItems > paging.pageSize">
+            <pagination
+                    boundary-links='true' class='pagination-sm'
+                    max-size='3'
+                    ng-model='paging.pageNum'
+                    total-items='paging.totalItems'
+                    items-per-page='paging.pageSize'
+                    previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;'
+                    last-text='&raquo;'></pagination>
+        </div>
+
+        <table ng-if='photos && photos.length > 0' class='table'>
+            <thead>
+            <tr>
+                <th localized>plugin.photos.browse.heading.preview</th>
+                <th localized>plugin.photos.browse.heading.device</th>
+                <th localized>plugin.photos.browse.heading.filename</th>
+                <th localized>plugin.photos.browse.heading.date</th>
+                <th localized>plugin.photos.browse.heading.location</th>
+                <th class='actions-column' localized>table.heading.users.actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat='photo in photos'>
+                <td>
+                    <a ng-href='{{getPhotoUrl(photo)}}' target='_blank'>
+                        <img ng-src='{{getPhotoUrl(photo)}}' style='max-height:60px; max-width:80px;'/>
+                    </a>
+                </td>
+                <td>{{photo.deviceNumber}}</td>
+                <td>{{photo.originalName}}</td>
+                <td>{{formatDate(photo.uploadTs)}}</td>
+                <td>
+                    <span ng-if='photo.address'>{{photo.address}}</span>
+                    <span ng-if='!photo.address && photo.lat'>{{photo.lat}}, {{photo.lon}}</span>
+                </td>
+                <td>
+                    <button type='button' class='btn btn-default' ng-click='deletePhoto(photo)'>
+                        <span class='glyphicon glyphicon-trash'></span>
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div ng-if='!photos || photos.length === 0' class='text-center'>
+            <span localized>plugin.photos.browse.no.photos</span>
+        </div>
+
+        <div class="text-center" ng-if="paging.totalItems > paging.pageSize">
+            <pagination
+                    boundary-links='true' class='pagination-sm'
+                    max-size='3'
+                    ng-model='paging.pageNum'
+                    total-items='paging.totalItems'
+                    items-per-page='paging.pageSize'
+                    previous-text='&lsaquo;' next-text='&rsaquo;' first-text='&laquo;'
+                    last-text='&raquo;'></pagination>
+        </div>
+
+    </div>
+</div>

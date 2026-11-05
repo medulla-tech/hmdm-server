@@ -1,0 +1,106 @@
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<div class="ng-scope" ng-controller="PluginContactsController">
+
+    <div class="alert alert-success" ng-if="successMessage">{{successMessage}}</div>
+    <div class="alert alert-danger"  ng-if="errorMessage">{{errorMessage}}</div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>Contacts Sync Settings</strong></div>
+        <div class="panel-body">
+
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Configuration</label>
+                <div class="col-sm-5">
+                    <select class="form-control"
+                            ng-model="selectedConfigurationId"
+                            ng-options="c.id as c.name for c in configurations"
+                            ng-change="onConfigurationSelected()">
+                        <option value="">-- Select configuration --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div ng-if="selectedConfigurationId">
+
+                <div ng-if="loading" class="text-center"><span class="glyphicon glyphicon-refresh spinning"></span></div>
+
+                <div ng-if="!loading">
+
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">VCF File URL</label>
+                        <div class="col-sm-7">
+                            <input type="url" class="form-control"
+                                   ng-model="config.url"
+                                   placeholder="https://example.com/contacts.vcf">
+                            <p class="help-block">URL to the VCF file containing the contacts to push to devices.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">HTTP Username</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" ng-model="config.login"
+                                   placeholder="Optional" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">HTTP Password</label>
+                        <div class="col-sm-4">
+                            <input type="password" class="form-control" ng-model="config.password"
+                                   placeholder="Optional" autocomplete="new-password">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">Account Type</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" ng-model="config.accountType"
+                                   placeholder="e.g. Headwind" autocomplete="off">
+                            <p class="help-block">Alphanumeric value used to distinguish synced contacts on the device (no spaces).</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">Sync Interval (sec)</label>
+                        <div class="col-sm-3">
+                            <input type="number" class="form-control" ng-model="config.syncInterval"
+                                   min="0" placeholder="0">
+                            <p class="help-block">Set to 0 for one-time sync.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">Wipe All Contacts</label>
+                        <div class="col-sm-9">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" ng-model="config.wipeContacts">
+                                    Remove all existing contacts on the device before syncing
+                                    <span class="text-danger">(use with caution!)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-sm-offset-3 col-sm-9">
+                            <button class="btn btn-primary" ng-click="save()" ng-disabled="saving">
+                                <span ng-if="saving"><span class="glyphicon glyphicon-refresh spinning"></span> Saving...</span>
+                                <span ng-if="!saving">Save</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div><!-- /!loading -->
+            </div><!-- /selectedConfigurationId -->
+
+        </div>
+    </div>
+</div>

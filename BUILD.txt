@@ -8,10 +8,10 @@ This instruction has been tested on Ubuntu Linux 20.04 LTS/22.04 LTS.
 1. Install required software
 
 For Ubuntu Linux 20.04 LTS
-# sudo apt install git aapt tomcat8 maven postgresql
+# sudo apt install git aapt tomcat8 maven mysql-server
 
 For Ubuntu Linux 22.04 LTS:
-# sudo apt install git aapt tomcat9 maven postgresql
+# sudo apt install git aapt tomcat9 maven mysql-server
 
 2. Make sure Tomcat is running
 
@@ -20,7 +20,7 @@ curl localhost:8080
 
 3. Clone the repository
 
-# git clone https://github.com/h-mdm/hmdm-server
+# git clone https://github.com/h-mdm/hmdm-server-mysql 
 # cd hmdm-server
 
 4. If you are planning to run or debug Headwind MDM in IDE, create the properties
@@ -34,13 +34,14 @@ and update the contents of the server/build.properties file.
 
 # mvn install
 
-6. Create the PostgreSQL database and user
+6. Create the MySQL database and user
 
-# sudo su postgres
-# psql
-postgres=# CREATE USER hmdm WITH PASSWORD 'topsecret';
-postgres=# CREATE DATABASE hmdm WITH OWNER=hmdm;
-postgres=# \q
+# sudo mysql -u root -p
+mysql> CREATE USER 'hmdm'@'localhost' IDENTIFIED BY 'topsecret';
+mysql> CREATE DATABASE hmdm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+mysql> GRANT ALL PRIVILEGES ON hmdm.* TO 'hmdm'@'localhost';
+mysql> FLUSH PRIVILEGES;
+mysql> EXIT;
 
 7. Run the installer script (as root)
 

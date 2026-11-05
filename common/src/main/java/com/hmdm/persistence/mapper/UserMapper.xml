@@ -82,16 +82,16 @@
     </select>
 
     <select id="findAllUserRoles" resultMap="userRoleFull">
-        SELECT userRoles.id     AS user_role_id,
-               userRoles.name   AS user_role_name,
-               userRoles.superadmin   AS user_role_super_admin,
+        SELECT userroles.id     AS user_role_id,
+               userroles.name   AS user_role_name,
+               userroles.superadmin   AS user_role_super_admin,
                permissions.id AS permission_id,
                permissions.name AS permission_name,
                permissions.superadmin AS permission_super_admin
-        FROM userRoles
-        LEFT JOIN userRolePermissions urp ON urp.roleId = userRoles.id
+        FROM userroles
+        LEFT JOIN userrolepermissions urp ON urp.roleId = userroles.id
         LEFT JOIN permissions ON permissions.id = urp.permissionId
-        WHERE userRoles.superAdmin = #{includeSuperAdmin} OR NOT userRoles.superAdmin
+        WHERE userroles.superAdmin = #{includeSuperAdmin} OR NOT userroles.superAdmin
     </select>
 
     <select id="findFirstByRole" resultType="User">
@@ -101,9 +101,9 @@
     <sql id="userDataSelect">
         SELECT users.*,
                customers.master AS masterCustomer,
-               userRoles.id     AS user_role_id,
-               userRoles.name   AS user_role_name,
-               userRoles.superadmin   AS user_role_super_admin,
+               userroles.id     AS user_role_id,
+               userroles.name   AS user_role_name,
+               userroles.superadmin   AS user_role_super_admin,
                permissions.id AS permission_id,
                permissions.name AS permission_name,
                permissions.superadmin AS permission_super_admin,
@@ -111,13 +111,13 @@
                configurations.id AS configurationId, configurations.name AS configurationName
         FROM users
                  INNER JOIN customers ON customers.id = users.customerId
-                 INNER JOIN userRoles ON userRoles.id = users.userRoleId
-                 LEFT JOIN userRolePermissions urp ON urp.roleid = userRoles.id
+                 INNER JOIN userroles ON userroles.id = users.userRoleId
+                 LEFT JOIN userrolepermissions urp ON urp.roleid = userroles.id
                  LEFT JOIN permissions ON urp.permissionid = permissions.id
-                 LEFT JOIN userDeviceGroupsAccess ON users.id = userDeviceGroupsAccess.userId
-                 LEFT JOIN groups ON userDeviceGroupsAccess.groupId = groups.id
-                 LEFT JOIN userConfigurationAccess ON users.id = userConfigurationAccess.userId
-                 LEFT JOIN configurations ON userConfigurationAccess.configurationId = configurations.id
+                 LEFT JOIN userdevicegroupsaccess ON users.id = userdevicegroupsaccess.userId
+                 LEFT JOIN groups ON userdevicegroupsaccess.groupId = groups.id
+                 LEFT JOIN userconfigurationaccess ON users.id = userconfigurationaccess.userId
+                 LEFT JOIN configurations ON userconfigurationaccess.configurationId = configurations.id
     </sql>
 
     <select id="findByLogin" resultMap="userFull">
@@ -158,7 +158,7 @@
     </select>
 
     <insert id="insertUserDeviceGroupsAccess">
-        INSERT INTO userDeviceGroupsAccess (userId, groupId) VALUES
+        INSERT INTO userdevicegroupsaccess (userId, groupId) VALUES
         <foreach item="groupId" index="index" collection="groups"
                  open="" separator="," close="">
             (#{id}, #{groupId})
@@ -166,7 +166,7 @@
     </insert>
 
     <insert id="insertUserConfigurationAccess">
-        INSERT INTO userConfigurationAccess (userId, configurationId) VALUES
+        INSERT INTO userconfigurationaccess (userId, configurationId) VALUES
         <foreach item="configurationId" index="index" collection="configurations"
                  open="" separator="," close="">
             (#{id}, #{configurationId})

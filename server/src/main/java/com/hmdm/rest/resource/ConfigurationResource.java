@@ -257,11 +257,11 @@ public class ConfigurationResource {
             return Response.DUPLICATE_ENTITY("error.duplicate.configuration");
         } else {
             dbConfiguration = this.getConfiguration(configuration.getId());
-            List<Application> configurationApplications = this.configurationDAO.getPlainConfigurationApplications(configuration.getId());
+            List<Application>configurationapplications = this.configurationDAO.getPlainConfigurationApplications(configuration.getId());
             Configuration copy = dbConfiguration.newCopy();
             copy.setName(configuration.getName());
             copy.setDescription(configuration.getDescription());
-            copy.setApplications(configurationApplications);
+            copy.setApplications(configurationapplications);
             copy.setBaseUrl(this.configurationDAO.getBaseUrl());
             this.configurationDAO.insertConfiguration(copy);
             User user = SecurityContext.get().getCurrentUser().get();

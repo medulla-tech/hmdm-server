@@ -51,7 +51,7 @@ public interface IconMapper {
             "                 ELSE f.filePath " +
             "             END " +
             "    END AS fileName FROM icons " +
-            "    LEFT JOIN uploadedFiles f ON icons.fileId = f.id " +
+            "    LEFT JOIN uploadedfiles f ON icons.fileId = f.id " +
             "WHERE icons.customerId = #{customerId} ORDER BY icons.name")
     List<Icon> getAllIcons(@Param("customerId") int customerId);
 
@@ -63,8 +63,8 @@ public interface IconMapper {
             "                 ELSE f.filePath " +
             "             END " +
             "    END AS fileName FROM icons " +
-            "    LEFT JOIN uploadedFiles f ON icons.fileId = f.id " +
-            "WHERE icons.customerId = #{customerId} AND icons.name ILIKE #{value} ORDER BY icons.name")
+            "    LEFT JOIN uploadedfiles f ON icons.fileId = f.id " +
+            "WHERE icons.customerId = #{customerId} AND icons.name LIKE #{value} ORDER BY icons.name")
     List<Icon> getAllIconsByValue(@Param("customerId") int customerId, @Param("value") String value);
 
     @Delete({"DELETE FROM icons WHERE id = #{id}"})

@@ -52,46 +52,46 @@
     </select>
 
     <select id="findAll" resultMap="userRoleFull">
-        SELECT userRoles.id     AS user_role_id,
-               userRoles.name   AS user_role_name,
-               userRoles.superadmin   AS user_role_super_admin,
+        SELECT userroles.id     AS user_role_id,
+               userroles.name   AS user_role_name,
+               userroles.superadmin   AS user_role_super_admin,
                permissions.id AS permission_id,
                permissions.name AS permission_name,
                permissions.superadmin AS permission_super_admin
-        FROM userRoles
-        LEFT JOIN userRolePermissions urp ON urp.roleId = userRoles.id
+        FROM userroles
+        LEFT JOIN userrolepermissions urp ON urp.roleId = userroles.id
         LEFT JOIN permissions ON permissions.id = urp.permissionId
-        WHERE NOT userRoles.superAdmin
+        WHERE NOT userroles.superAdmin
     </select>
 
     <select id="findByName" resultMap="userRoleFull">
-        SELECT userRoles.id     AS user_role_id,
-        userRoles.name   AS user_role_name,
-        userRoles.superadmin   AS user_role_super_admin,
+        SELECT userroles.id     AS user_role_id,
+        userroles.name   AS user_role_name,
+        userroles.superadmin   AS user_role_super_admin,
         permissions.id AS permission_id,
         permissions.name AS permission_name,
         permissions.superadmin AS permission_super_admin
-        FROM userRoles
-        LEFT JOIN userRolePermissions urp ON urp.roleId = userRoles.id
+        FROM userroles
+        LEFT JOIN userrolepermissions urp ON urp.roleId = userroles.id
         LEFT JOIN permissions ON permissions.id = urp.permissionId
-        WHERE LOWER(userRoles.name)=LOWER(#{name})
+        WHERE LOWER(userroles.name)=LOWER(#{name})
     </select>
 
     <select id="findById" resultMap="userRoleFull">
-        SELECT userRoles.id     AS user_role_id,
-        userRoles.name   AS user_role_name,
-        userRoles.superadmin   AS user_role_super_admin,
+        SELECT userroles.id     AS user_role_id,
+        userroles.name   AS user_role_name,
+        userroles.superadmin   AS user_role_super_admin,
         permissions.id AS permission_id,
         permissions.name AS permission_name,
         permissions.superadmin AS permission_super_admin
-        FROM userRoles
-        LEFT JOIN userRolePermissions urp ON urp.roleId = userRoles.id
+        FROM userroles
+        LEFT JOIN userrolepermissions urp ON urp.roleId = userroles.id
         LEFT JOIN permissions ON permissions.id = urp.permissionId
-        WHERE userRoles.id=#{id}
+        WHERE userroles.id=#{id}
     </select>
 
     <insert id="insertPermissions">
-        INSERT INTO userRolePermissions VALUES
+        INSERT INTO userrolepermissions VALUES
         <foreach item="permissionId" index="index" collection="permissions"
                  open="" separator="," close="">
             (#{id}, #{permissionId})

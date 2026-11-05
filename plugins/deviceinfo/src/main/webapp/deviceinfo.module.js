@@ -249,10 +249,11 @@ angular.module('plugin-deviceinfo', ['ngResource', 'ui.bootstrap', 'ui.router', 
         }
     })
     .controller('PluginDeviceInfoController', function ($scope, $rootScope, $location, $http, $state, $stateParams,
-                                                        $interval,
+                                                        $interval, $timeout,
                                                         pluginDeviceInfoService, localization, splitDynamicInfoRecord,
                                                         DEVICE_PARAMS, WIFI_PARAMS, GPS_PARAMS,
-                                                        MOBILE1_PARAMS, MOBILE2_PARAMS) {
+                                                        MOBILE1_PARAMS, MOBILE2_PARAMS,
+                                                        hmdmMap, externalLibLoader) {
         $scope.successMessage = undefined;
         $scope.errorMessage = undefined;
 
@@ -276,7 +277,37 @@ angular.module('plugin-deviceinfo', ['ngResource', 'ui.bootstrap', 'ui.router', 
         $scope.dynamicDataMobile1FieldsOrder = [].concat(MOBILE1_PARAMS);
         $scope.dynamicDataMobile2FieldsOrder = [].concat(MOBILE2_PARAMS);
 
+        $scope.locationAvailable = false;
+        var mapInst = hmdmMap.get();
+        var leafletMap = null;
+        var leafletMarker = null;
+
+        var updateMapIfAvailable = function () {
+            var gpsData = $scope.dynamicGpsData;
+            if (!gpsData || !gpsData.gpsLat || !gpsData.gpsLon) { return; }
+            var lat = parseFloat(gpsData.gpsLat.value);
+            var lon = parseFloat(gpsData.gpsLon.value);
+            if (!lat || !lon) { return; }
+            $scope.locationAvailable = true;
+            externalLibLoader.getLoader('leaflet').load().then(function () {
+                $timeout(function () {
+                    if (!leafletMap) {
+                        leafletMap = mapInst.initMap($scope, 'deviceLocationMap',
+                            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+                        leafletMap.invalidateSize();
+                    }
+                    leafletMap.setView([lat, lon], 13);
+                    if (leafletMarker) {
+                        leafletMarker.setLatLng([lat, lon]);
+                    } else {
+                        leafletMarker = L.marker([lat, lon]).addTo(leafletMap);
+                    }
+                }, 200);
+            });
+        };
+
         var loadData = function () {
+            $scope.locationAvailable = false;
             pluginDeviceInfoService.getDeviceInfo({"deviceNumber": deviceLookupFormatter($scope.formData.deviceNumber)}, function (response) {
                 if (response.status === 'OK') {
                     $scope.deviceInfo = response.data;
@@ -289,6 +320,7 @@ angular.module('plugin-deviceinfo', ['ngResource', 'ui.bootstrap', 'ui.router', 
                         $scope.dynamicGpsData = data.gpsData;
                         $scope.dynamicMobile1Data = data.mobile1Data;
                         $scope.dynamicMobile2Data = data.mobile2Data;
+                        updateMapIfAvailable();
                     }
                 } else {
                     $scope.errorMessage = localization.localizeServerResponse(response);

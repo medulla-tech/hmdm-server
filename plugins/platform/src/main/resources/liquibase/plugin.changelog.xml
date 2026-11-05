@@ -38,24 +38,27 @@
         <comment>Create plugins table</comment>
         <sql>
             CREATE TABLE plugins (
-                id serial NOT NULL CONSTRAINT plugins_pr_key PRIMARY KEY,
-                identifier VARCHAR(50) NOT NULL CONSTRAINT plugin_identifier_unq UNIQUE,
+                id INT NOT NULL AUTO_INCREMENT,
+                identifier VARCHAR(50) NOT NULL,
                 name VARCHAR(50) NOT NULL,
                 description TEXT,
-                createTime TIMESTAMP NOT NULL DEFAULT NOW(),
+                createTime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 disabled BOOLEAN NOT NULL DEFAULT FALSE,
                 javascriptModuleFile VARCHAR(200),
                 functionsViewTemplate VARCHAR(200),
-                settingsViewTemplate VARCHAR(200)
-            );
-
-            CREATE TABLE pluginsDisabled (
-                pluginId INT NOT NULL REFERENCES plugins( id ) ON DELETE CASCADE,
-                customerId INT NOT NULL REFERENCES customers( id ) ON DELETE CASCADE
-            );
+                settingsViewTemplate VARCHAR(200),
+                CONSTRAINT plugins_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_identifier_unq UNIQUE (identifier)
+            ) ENGINE=InnoDB;
+            CREATE TABLE pluginsdisabled (
+                pluginId INT NOT NULL,
+                customerId INT NOT NULL,
+                CONSTRAINT pluginsdisabled_pluginId_fkey FOREIGN KEY (pluginId) REFERENCES plugins(id) ON DELETE CASCADE,
+                CONSTRAINT pluginsdisabled_customerId_fkey FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
         </sql>
         <rollback>
-            DROP TABLE pluginsDisabled;
+            DROP TABLE pluginsdisabled;
             DROP TABLE plugins;
         </rollback>
     </changeSet>
@@ -98,7 +101,7 @@
         <comment>Permission,new: plugins_customer_access_management</comment>
         <sql>
             INSERT INTO permissions (name, description) VALUES ('plugins_customer_access_management', 'Имеет доступ к управлению списком используемых плагинов на уровне учетной записи своей организации');
-            INSERT INTO userRolePermissions (roleId, permissionId)
+            INSERT INTO userrolepermissions (roleId, permissionId)
             SELECT id, currval('permissions_id_seq')
             FROM userroles WHERE name IN ('Администратор', 'Супер-Администратор');
         </sql>
@@ -110,10 +113,10 @@
     <changeSet id="plugin-platform-16.06.2020-16:08" author="seva" context="common">
         <comment>Update name column type</comment>
         <sql>
-            ALTER TABLE plugins ALTER COLUMN name TYPE text;
+            ALTER TABLE plugins MODIFY COLUMN name TEXT;
         </sql>
         <rollback>
-            ALTER TABLE plugins ALTER COLUMN name TYPE VARCHAR(50);
+            ALTER TABLE plugins MODIFY COLUMN name VARCHAR(50);
         </rollback>
     </changeSet>
 

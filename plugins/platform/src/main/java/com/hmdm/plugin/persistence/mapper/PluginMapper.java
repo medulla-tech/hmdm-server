@@ -39,9 +39,9 @@ public interface PluginMapper {
     @Select({"SELECT plugins.* " +
             "FROM plugins " +
             "WHERE disabled = FALSE " +
-            "AND NOT EXISTS (SELECT 1 FROM pluginsDisabled " +
-            "                WHERE pluginsDisabled.customerId=#{customerId} " +
-            "                AND pluginsDisabled.pluginId=plugins.id)"})
+            "AND NOT EXISTS (SELECT 1 FROM pluginsdisabled " +
+            "                WHERE pluginsdisabled.customerId=#{customerId} " +
+            "                AND pluginsdisabled.pluginId=plugins.id)"})
     List<Plugin> findAvailablePluginsByCustomerId(@Param("customerId") int customerId);
 
     @Select("SELECT plugins.* FROM plugins WHERE disabled = FALSE ORDER BY plugins.identifier")
@@ -50,14 +50,14 @@ public interface PluginMapper {
     @Select("SELECT plugins.* FROM plugins ORDER BY plugins.identifier")
     List<Plugin> findRegisteredPlugins();
 
-    @Delete("DELETE FROM pluginsDisabled WHERE customerId = #{customerId}")
+    @Delete("DELETE FROM pluginsdisabled WHERE customerId = #{customerId}")
     int cleanUpDisabledPlugins(@Param("customerId") int customerId);
 
     int insertDisabledPlugin(@Param("pluginIds") Integer[] pluginIds, @Param("customerId") int customerId);
 
-    @Select("SELECT customerId, pluginId FROM pluginsDisabled ORDER BY customerId, pluginId")
+    @Select("SELECT customerId, pluginId FROM pluginsdisabled ORDER BY customerId, pluginId")
     List<DisabledPlugin> getDisabledPluginsForAllCustomers();
 
-    @Select("SELECT customerId, pluginId FROM pluginsDisabled WHERE customerId = #{customerId} ORDER BY customerId, pluginId")
+    @Select("SELECT customerId, pluginId FROM pluginsdisabled WHERE customerId = #{customerId} ORDER BY customerId, pluginId")
     List<DisabledPlugin> getDisabledPluginsForCustomer(@Param("customerId") int customerId);
 }

@@ -45,6 +45,11 @@
         <module>messaging</module>
         <module>push</module>
         <module>xtra</module>
+        <module>contacts</module>
+        <module>deviceexport</module>
+        <module>photos</module>
+        <module>remotecontrol</module>
+        <module>netfilter</module>
     </modules>
 
     <dependencies>

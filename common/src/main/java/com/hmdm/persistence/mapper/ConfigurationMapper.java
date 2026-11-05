@@ -34,7 +34,7 @@ public interface ConfigurationMapper {
     @Select({"SELECT configurations.* " +
             "FROM configurations " +
             "INNER JOIN users ON users.id = #{userId} " +
-            "LEFT JOIN userConfigurationAccess access ON configurations.id = access.configurationId AND access.userId = users.id " +
+            "LEFT JOIN userconfigurationaccess access ON configurations.id = access.configurationId AND access.userId = users.id " +
             "WHERE configurations.customerId=#{customerId} " +
             "AND (users.allConfigAvailable = TRUE OR NOT access.id IS NULL) " +
             "ORDER BY configurations.name"})
@@ -43,10 +43,10 @@ public interface ConfigurationMapper {
     @Select({"SELECT configurations.* " +
             "FROM configurations " +
             "INNER JOIN users ON users.id = #{userId} " +
-            "LEFT JOIN userConfigurationAccess access ON configurations.id = access.configurationId AND access.userId = users.id " +
+            "LEFT JOIN userconfigurationaccess access ON configurations.id = access.configurationId AND access.userId = users.id " +
             "WHERE configurations.customerId=#{customerId} " +
             "AND (users.allConfigAvailable = TRUE OR NOT access.id IS NULL) " +
-            "AND (configurations.name ILIKE #{value} OR configurations.description ILIKE #{value}) " +
+            "AND (configurations.name LIKE #{value} OR configurations.description LIKE #{value}) " +
             "ORDER BY configurations.name"})
     List<Configuration> getAllConfigurationsByValue(@Param("customerId") int customerId,
                                                     @Param("value") String value,
@@ -145,10 +145,10 @@ public interface ConfigurationMapper {
             @Param("appUsageParameters") List<ConfigurationApplicationParameters> applicationUsageParameters
     );
 
-    @Delete({"DELETE FROM configurationApplications WHERE configurationId=#{id}"})
+    @Delete({"DELETE FROM configurationapplications WHERE configurationId=#{id}"})
     void removeConfigurationApplicationsById(@Param("id") Integer id);
 
-    @Delete({"DELETE FROM configurationApplicationSettings WHERE extRefId = #{id}"})
+    @Delete({"DELETE FROM configurationapplicationsettings WHERE extRefId = #{id}"})
     void removeConfigurationApplicationSettingsById(@Param("id") Integer id);
 
     /**
@@ -170,8 +170,8 @@ public interface ConfigurationMapper {
      */
     List<Application> getPlainConfigurationApplications(@Param("customerId") Integer customerId, @Param("caTableName") String caTableName, @Param("id") Integer id);
 
-    @Insert("CREATE TEMP TABLE ${tableName} ON COMMIT DROP AS SELECT * FROM configurationApplications WHERE configurationId=${configurationId};"
-    )
+    @Insert("CREATE TEMPORARY TABLE ${tableName} AS SELECT * FROM configurationapplications WHERE configurationId=${configurationId}")
+    
     void createTempConfigAppTable(@Param("tableName") String tableName, @Param("configurationId") Integer configurationId);
 
 
@@ -186,13 +186,13 @@ public interface ConfigurationMapper {
     List<Application> getPlainConfigurationAppsOptimized(@Param("id") Integer id);
 
     @Select("SELECT EXISTS( " +
-            "SELECT * FROM configurationApplications ca " +
+            "SELECT * FROM configurationapplications ca " +
             "LEFT JOIN applications a ON ca.applicationId=a.id " +
             "WHERE a.pkg=#{pkg} AND ca.configurationId=#{configurationId} " +
             ")")
     boolean isAppInstalledInConfiguration(@Param("pkg") String pkg, @Param("configurationId") Integer configurationId);
 
-    @Select("SELECT * FROM configurationApplicationParameters WHERE configurationId = #{id}")
+    @Select("SELECT * FROM configurationapplicationparameters WHERE configurationId = #{id}")
     List<ConfigurationApplicationParameters> getApplicationParameters(@Param("id") Integer configurationId);
 
     @Select({"SELECT * FROM configurations WHERE id=#{id}"})
@@ -217,6 +217,6 @@ public interface ConfigurationMapper {
     void insertConfigurationFiles(@Param("id") Integer configurationId,
                                   @Param("files") List<ConfigurationFile> files);
 
-    @Delete({"DELETE FROM configurationFiles WHERE configurationId = #{id}"})
+    @Delete({"DELETE FROM configurationfiles WHERE configurationId = #{id}"})
     void removeConfigurationFilesById(@Param("id") Integer configurationId);
 }

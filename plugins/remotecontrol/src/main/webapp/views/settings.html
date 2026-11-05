@@ -1,0 +1,89 @@
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<div class="width-1000" ng-controller="PluginRemoteControlSettingsController">
+  <div class="text-center">
+    <h4 localized>plugin.remotecontrol.settings.title</h4>
+  </div>
+
+  <div>
+    <form class="form-horizontal">
+      <div class="form-group">
+        <div ng-show="errorMessage" class="error">
+          <span>{{errorMessage}}</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <div ng-show="successMessage" class="success">
+          <span>{{successMessage}}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-4 control-label" localized
+          >plugin.remotecontrol.settings.stun.url</label
+        >
+        <div class="col-sm-8">
+          <input
+            type="text"
+            ng-model="settings.stunUrl"
+            class="form-control"
+            placeholder="stun:stun.l.google.com:19302"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-4 control-label" localized
+          >plugin.remotecontrol.settings.turn.url</label
+        >
+        <div class="col-sm-8">
+          <input
+            type="text"
+            ng-model="settings.turnUrl"
+            class="form-control"
+            placeholder="turn:your-turn-server.com:3478"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-4 control-label" localized
+          >plugin.remotecontrol.settings.turn.username</label
+        >
+        <div class="col-sm-8">
+          <input
+            type="text"
+            ng-model="settings.turnUsername"
+            class="form-control"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-4 control-label" localized
+          >plugin.remotecontrol.settings.turn.password</label
+        >
+        <div class="col-sm-8">
+          <input
+            type="password"
+            ng-model="settings.turnPassword"
+            class="form-control"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-4 col-sm-8">
+          <button class="btn btn-primary" ng-click="save()" localized>
+            plugin.remotecontrol.settings.save
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

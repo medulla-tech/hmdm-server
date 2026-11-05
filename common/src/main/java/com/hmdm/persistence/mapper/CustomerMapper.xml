@@ -29,7 +29,7 @@
         WHERE customers.master = FALSE
         <if test="searchValue != null">
             AND (
-            customers.name ILIKE ('%' || #{searchValue} || '%') OR customers.description ILIKE ('%' || #{searchValue} || '%')
+            customers.name LIKE ('%' || #{searchValue} || '%') OR customers.description LIKE ('%' || #{searchValue} || '%')
             )
         </if>
         <if test="accountType != null">
@@ -64,17 +64,17 @@
         <if test="sortValue == null">
             ORDER BY name
         </if>
-        OFFSET (#{currentPage} - 1) * #{pageSize}
-        LIMIT #{pageSize}
+    <bind name="offset" value="(currentPage - 1) * pageSize"/>
+    LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="countAllCustomers" parameterType="com.hmdm.rest.json.CustomerSearchRequest" resultType="long">
-        SELECT COUNT(customers.*)
+        SELECT COUNT(*)
         FROM customers
         WHERE customers.master = FALSE
         <if test="searchValue != null">
             AND (
-            customers.name ILIKE ('%' || #{searchValue} || '%') OR customers.description ILIKE ('%' || #{searchValue} || '%')
+            customers.name LIKE ('%' || #{searchValue} || '%') OR customers.description LIKE ('%' || #{searchValue} || '%')
             )
         </if>
         <if test="accountType != null">

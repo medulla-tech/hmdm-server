@@ -31,8 +31,8 @@
                configurations.name as configName
         FROM devices
                  LEFT JOIN configurations ON devices.configurationId = configurations.id
-                 LEFT JOIN deviceGroups ON devices.id = deviceGroups.deviceId
-                 LEFT JOIN groups ON deviceGroups.groupId = groups.id
+                 LEFT JOIN devicegroups ON devices.id = devicegroups.deviceId
+                 LEFT JOIN groups ON devicegroups.groupId = groups.id
     </sql>
     
     <resultMap id="deviceResult" type="Device">
@@ -90,10 +90,10 @@
                devices.number AS deviceNumber,
         <if test="value != null &amp;&amp; !fastSearch">
         (
-            COALESCE(CASE WHEN devices.number ILIKE #{value} THEN 16 END, 0) +
-            COALESCE(CASE WHEN devices.imei ILIKE #{value} THEN 8 END, 0) +
-            COALESCE(CASE WHEN devices.phone ILIKE #{value} THEN 4 END, 0) +
-            COALESCE(CASE WHEN devices.description ILIKE #{value} THEN 2 END, 0)
+            COALESCE(CASE WHEN devices.number LIKE #{value} THEN 16 END, 0) +
+            COALESCE(CASE WHEN devices.imei LIKE #{value} THEN 8 END, 0) +
+            COALESCE(CASE WHEN devices.phone LIKE #{value} THEN 4 END, 0) +
+            COALESCE(CASE WHEN devices.description LIKE #{value} THEN 2 END, 0)
             )
         </if>
         <if test="value == null || fastSearch">0</if>
@@ -101,65 +101,67 @@
         (
             CASE
                 WHEN 'STATUS' = #{sortBy} THEN
-                    (CASE
-                        WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - devices.lastupdate) &lt; (2 * 3600 * 1000) THEN '1_green'
-                        WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - devices.lastupdate) &lt; (4 * 3600 * 1000) THEN '2_yellow'
-                        ELSE '3_red'
-                    END)::VARCHAR(100)
-                WHEN 'LAST_UPDATE' = #{sortBy} THEN devices.lastUpdate::VARCHAR(100)
-                WHEN 'NUMBER' = #{sortBy} THEN LOWER(devices.number)::VARCHAR(100)
-                WHEN 'IMEI' = #{sortBy} THEN mdm_resolve_device_property(devices.imei, devices.infojson -&gt;&gt; 'imei')::VARCHAR(100)
-                WHEN 'PHONE' = #{sortBy} THEN mdm_resolve_device_property(devices.phone, devices.infojson -&gt;&gt; 'phone')::VARCHAR(100)
-                WHEN 'MODEL' = #{sortBy} THEN LOWER(devices.infojson -&gt;&gt; 'model')::VARCHAR(100)
-                WHEN 'PERMISSIONS' = #{sortBy} THEN mdm_device_permissions_index(devices.info)::VARCHAR(100)
-                WHEN 'INSTALLATIONS' = #{sortBy} THEN COALESCE(deviceStatuses.applicationsStatus, 'FAILURE')::VARCHAR(100)
-                WHEN 'FILES' = #{sortBy} THEN COALESCE(deviceStatuses.configFilesStatus, 'OTHER')::VARCHAR(100)
-                WHEN 'CONFIGURATION' = #{sortBy} THEN LOWER(configurations.name)::VARCHAR(100)
-                WHEN 'DESCRIPTION' = #{sortBy} THEN LOWER(COALESCE(devices.description, ''))::VARCHAR(100)
-                WHEN 'GROUP' = #{sortBy} THEN COALESCE(LOWER(groups.name), '')::VARCHAR(100)
-                WHEN 'LAUNCHER_VERSION' = #{sortBy} THEN mdm_device_launcher_version(applications.pkg, devices.info)::VARCHAR(100)
-                WHEN 'BATTERY_LEVEL' = #{sortBy} THEN LPAD(COALESCE(devices.infojson -&gt;&gt; 'batteryLevel', '0'), 3, '0')::VARCHAR(100)
-                WHEN 'DEFAULT_LAUNCHER' = #{sortBy} THEN COALESCE(devices.infojson -&gt;&gt; 'defaultLauncher', 'unknown')::VARCHAR(100)
-                WHEN 'MDM_MODE' = #{sortBy} THEN COALESCE(devices.infojson -&gt;&gt; 'mdmMode', '')::VARCHAR(100)
-                WHEN 'KIOSK_MODE' = #{sortBy} THEN COALESCE(devices.infojson -&gt;&gt; 'kioskMode', '')::VARCHAR(100)
-                WHEN 'ANDROID_VERSION' = #{sortBy} THEN COALESCE(devices.infojson -&gt;&gt; 'androidVersion', '')::VARCHAR(100)
-                WHEN 'ENROLLMENT_DATE' = #{sortBy} THEN devices.enrollTime::VARCHAR(100)
-                WHEN 'SERIAL' = #{sortBy} THEN COALESCE(devices.infojson -&gt;&gt; 'serial', '')::VARCHAR(100)
-                WHEN 'PUBLICIP' = #{sortBy} THEN COALESCE(devices.publicIp, '')::VARCHAR(100)
-                WHEN 'CUSTOM1' = #{sortBy} THEN LOWER(devices.custom1)::VARCHAR(100)
-                WHEN 'CUSTOM2' = #{sortBy} THEN LOWER(devices.custom2)::VARCHAR(100)
-                WHEN 'CUSTOM3' = #{sortBy} THEN LOWER(devices.custom3)::VARCHAR(100)
+                    CAST(
+                        (CASE
+                            WHEN (UNIX_TIMESTAMP(NOW()) * 1000 - devices.lastupdate) &lt; (2 * 3600 * 1000) THEN '1_green'
+                            WHEN (UNIX_TIMESTAMP(NOW()) * 1000 - devices.lastupdate) &lt; (4 * 3600 * 1000) THEN '2_yellow'
+                            ELSE '3_red'
+                        END) AS CHAR(100)
+                    )
+                WHEN 'LAST_UPDATE' = #{sortBy} THEN CAST(devices.lastUpdate AS CHAR(100))
+                WHEN 'NUMBER' = #{sortBy} THEN CAST(LOWER(devices.number) AS CHAR(100))
+                WHEN 'IMEI' = #{sortBy} THEN CAST(mdm_resolve_device_property(devices.imei, JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.imei'))) AS CHAR(100))
+                WHEN 'PHONE' = #{sortBy} THEN CAST(mdm_resolve_device_property(devices.phone, JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.phone'))) AS CHAR(100))
+                WHEN 'MODEL' = #{sortBy} THEN CAST(LOWER(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.model'))) AS CHAR(100))
+                WHEN 'PERMISSIONS' = #{sortBy} THEN CAST(mdm_device_permissions_index(devices.info) AS CHAR(100))
+                WHEN 'INSTALLATIONS' = #{sortBy} THEN CAST(COALESCE(devicestatuses.applicationsStatus, 'FAILURE') AS CHAR(100))
+                WHEN 'FILES' = #{sortBy} THEN CAST(COALESCE(devicestatuses.configFilesStatus, 'OTHER') AS CHAR(100))
+                WHEN 'CONFIGURATION' = #{sortBy} THEN CAST(LOWER(configurations.name) AS CHAR(100))
+                WHEN 'DESCRIPTION' = #{sortBy} THEN CAST(LOWER(COALESCE(devices.description, '')) AS CHAR(100))
+                WHEN 'GROUP' = #{sortBy} THEN CAST(COALESCE(LOWER(groups.name), '') AS CHAR(100))
+                WHEN 'LAUNCHER_VERSION' = #{sortBy} THEN CAST(mdm_device_launcher_version(applications.pkg, devices.info) AS CHAR(100))
+                WHEN 'BATTERY_LEVEL' = #{sortBy} THEN CAST(LPAD(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.batteryLevel')), '0'), 3, '0') AS CHAR(100))
+                WHEN 'DEFAULT_LAUNCHER' = #{sortBy} THEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.defaultLauncher')), 'unknown') AS CHAR(100))
+                WHEN 'MDM_MODE' = #{sortBy} THEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.mdmMode')), '') AS CHAR(100))
+                WHEN 'KIOSK_MODE' = #{sortBy} THEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.kioskMode')), '') AS CHAR(100))
+                WHEN 'ANDROID_VERSION' = #{sortBy} THEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.androidVersion')), '') AS CHAR(100))
+                WHEN 'ENROLLMENT_DATE' = #{sortBy} THEN CAST(devices.enrollTime AS CHAR(100))
+                WHEN 'SERIAL' = #{sortBy} THEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.serial')), '') AS CHAR(100))
+                WHEN 'PUBLICIP' = #{sortBy} THEN CAST(COALESCE(devices.publicIp, '') AS CHAR(100))
+                WHEN 'CUSTOM1' = #{sortBy} THEN CAST(LOWER(devices.custom1) AS CHAR(100))
+                WHEN 'CUSTOM2' = #{sortBy} THEN CAST(LOWER(devices.custom2) AS CHAR(100))
+                WHEN 'CUSTOM3' = #{sortBy} THEN CAST(LOWER(devices.custom3) AS CHAR(100))
                 ELSE ''
             END
         ) AS sortingValue
         FROM devices
         INNER JOIN users ON users.id = #{userId}
-        LEFT JOIN deviceStatuses ON devices.id = deviceStatuses.deviceId
+        LEFT JOIN devicestatuses ON devices.id = devicestatuses.deviceId
         LEFT JOIN configurations ON devices.configurationId = configurations.id
-        LEFT JOIN applicationVersions ON configurations.mainAppId = applicationVersions.id
-        LEFT JOIN applications ON applications.id = applicationVersions.applicationid
-        LEFT JOIN deviceGroups ON devices.id = deviceGroups.deviceId
-        LEFT JOIN groups ON deviceGroups.groupId = groups.id
-        LEFT JOIN userDeviceGroupsAccess access ON groups.id = access.groupId AND access.userId = users.id
+        LEFT JOIN applicationversions ON configurations.mainAppId = applicationversions.id
+        LEFT JOIN applications ON applications.id = applicationversions.applicationid
+        LEFT JOIN devicegroups ON devices.id = devicegroups.deviceId
+        LEFT JOIN groups ON devicegroups.groupId = groups.id
+        LEFT JOIN userdevicegroupsaccess access ON groups.id = access.groupId AND access.userId = users.id
         WHERE devices.customerId = #{customerId}
         AND (users.allDevicesAvailable = TRUE OR NOT access.id IS NULL)
         <if test="value != null &amp;&amp; !fastSearch">
             AND (
-            devices.number ILIKE #{value}
-            OR devices.description ILIKE #{value}
-            OR devices.imei ILIKE #{value}
-            OR devices.phone ILIKE #{value}
-            OR devices.publicIp ILIKE #{value}
-            OR devices.infojson -&gt;&gt; 'imei' ILIKE #{value}
-            OR devices.infojson -&gt;&gt; 'phone' ILIKE #{value}
-            OR devices.infojson -&gt;&gt; 'model' ILIKE #{value}
-            OR devices.infojson -&gt;&gt; 'serial' ILIKE #{value}
-            OR devices.custom1 ILIKE #{value}
-            OR devices.custom2 ILIKE #{value}
-            OR devices.custom3 ILIKE #{value}
-            OR devices.oldNumber ILIKE #{value}
-            OR configurations.name ILIKE #{value}
-            OR groups.name ILIKE #{value}
+            devices.number LIKE #{value}
+            OR devices.description LIKE #{value}
+            OR devices.imei LIKE #{value}
+            OR devices.phone LIKE #{value}
+            OR devices.publicIp LIKE #{value}
+            OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.imei')) LIKE #{value}
+            OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.phone')) LIKE #{value}
+            OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.model')) LIKE #{value}
+            OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.serial')) LIKE #{value}
+            OR devices.custom1 LIKE #{value}
+            OR devices.custom2 LIKE #{value}
+            OR devices.custom3 LIKE #{value}
+            OR devices.oldNumber LIKE #{value}
+            OR configurations.name LIKE #{value}
+            OR groups.name LIKE #{value}
             )
         </if>
         <if test="value != null &amp;&amp; fastSearch">
@@ -169,7 +171,7 @@
             )
         </if>
         <if test="imeiChanged">
-            AND devices.imeiUpdateTs / 1000 > extract(epoch from (now() - interval '1 hour'))
+            and devices.imeiUpdateTs / 1000 > unix_timestamp(now() - interval 1 hour)
         </if>
         <if test="groupId != null &amp;&amp; groupId > 0">
             AND (
@@ -193,12 +195,12 @@
         </if>
         <if test="onlineEarlierMillis != null">
             AND (
-            devices.lastUpdate &lt;= extract(epoch from now()) * 1000 - #{onlineEarlierMillis}
+            devices.lastUpdate &lt;= unix_timestamp(now()) * 1000 - #{onlineEarlierMillis}
             )
         </if>
         <if test="onlineLaterMillis != null">
             AND (
-            devices.lastUpdate >= extract(epoch from now()) * 1000 - #{onlineLaterMillis}
+            devices.lastUpdate >= unix_timestamp(now()) * 1000 - #{onlineLaterMillis}
             )
         </if>
         <if test="enrollmentDateFrom != null">
@@ -213,17 +215,17 @@
         </if>
         <if test="mdmMode != null">
             AND (
-            (devices.infojson -&gt;&gt; 'mdmMode')::BOOLEAN = #{mdmMode}
+            (JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.mdmMode')) = #{mdmMode})
             )
         </if>
         <if test="kioskMode != null">
             AND (
-            (devices.infojson -&gt;&gt; 'kioskMode')::BOOLEAN = #{kioskMode}
+            (JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.kioskMode')) = #{kioskMode})
             )
         </if>
         <if test="androidVersion != null">
             AND (
-            devices.infojson -&gt;&gt; 'androidVersion' = #{androidVersion}
+            JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.androidVersion')) = #{androidVersion}
             )
         </if>
         <if test="launcherVersion != null">
@@ -233,75 +235,96 @@
         </if>
         <if test="installationStatus != null">
             AND (
-            deviceStatuses.applicationsStatus = #{installationStatus}
+            devicestatuses.applicationsStatus = #{installationStatus}
             )
         </if>
         ) allowedDevicesInner
         ORDER BY sortingValue <if test="sortDir.equalsIgnoreCase(&quot;desc&quot;)">DESC</if>,
-                 searchPriority, LOWER(deviceNumber)
-        OFFSET (#{pageNum} - 1) * #{pageSize}
-        LIMIT #{pageSize}
+                searchPriority, LOWER(deviceNumber)
+        <bind name="offset" value="(pageNum - 1) * pageSize"/>
+        LIMIT #{offset}, #{pageSize}
     </sql>
 
     <select id="getAllDevices" parameterType="DeviceSearchRequest" resultMap="deviceResult">
-        SELECT devices.id AS deviceId, devices.number, devices.description, devices.lastUpdate,
-               devices.configurationId, devices.info, devices.imei, devices.phone, devices.customerId,
-               devices.enrollTime, devices.publicIp,
-               (devices.infojson ->> 'mdmMode')::BOOLEAN AS mdmMode,
-               (devices.infojson ->> 'kioskMode')::BOOLEAN AS kioskMode,
-               devices.infojson ->> 'androidVersion' AS androidVersion,
-               devices.infojson ->> 'serial' AS serial,
-               devices.custom1, devices.custom2, devices.custom3, devices.oldNumber, devices.fastSearch,
-               groups.id AS groupId, groups.name AS groupName,
-               configurations.name as configName,
-               applications.pkg AS launcherPkg,
-               applicationVersions.version AS launcherVersion,
-               CASE
-                   WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - devices.lastupdate) &lt; (2 * 3600 * 1000) THEN 'green'
-                   WHEN (EXTRACT(EPOCH FROM NOW()) * 1000 - devices.lastupdate) &lt; (4 * 3600 * 1000) THEN 'yellow'
-                   ELSE 'red'
-               END AS statusCode
+        SELECT 
+            devices.id AS deviceId,
+            devices.number,
+            devices.description,
+            devices.lastUpdate,
+            devices.configurationId,
+            devices.info,
+            devices.imei,
+            devices.phone,
+            devices.customerId,
+            devices.enrollTime,
+            devices.publicIp,
+            CAST(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.mdmMode')) AS UNSIGNED) AS mdmMode,
+            CAST(JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.kioskMode')) AS UNSIGNED) AS kioskMode,
+            JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.androidVersion')) AS androidVersion,
+            JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.serial')) AS serial,
+            devices.custom1,
+            devices.custom2,
+            devices.custom3,
+            devices.oldNumber,
+            devices.fastSearch,
+            groups.id AS groupId,
+            groups.name AS groupName,
+            configurations.name AS configName,
+            applications.pkg AS launcherPkg,
+            applicationversions.version AS launcherVersion,
+            CASE
+                WHEN (UNIX_TIMESTAMP(NOW(3)) * 1000 - devices.lastUpdate) &lt; (2 * 3600 * 1000) THEN 'green'
+                WHEN (UNIX_TIMESTAMP(NOW(3)) * 1000 - devices.lastUpdate) &lt; (4 * 3600 * 1000) THEN 'yellow'
+                ELSE 'red'
+            END AS statusCode
         FROM devices
         INNER JOIN (<include refid="allowedDevicesSelect"/>) allowedDevices ON allowedDevices.deviceId = devices.id
         LEFT JOIN configurations ON devices.configurationId = configurations.id
-        LEFT JOIN deviceGroups ON devices.id = deviceGroups.deviceId
-        LEFT JOIN groups ON deviceGroups.groupId = groups.id
-        LEFT JOIN applicationVersions ON configurations.mainAppId = applicationVersions.id
-        LEFT JOIN applications ON applications.id = applicationVersions.applicationid
-        ORDER BY allowedDevices.sortingValue <if test="sortDir.equalsIgnoreCase(&quot;desc&quot;)">DESC</if>,
-                 allowedDevices.searchPriority DESC, LOWER(devices.number), LOWER(groups.name);
+        LEFT JOIN devicegroups ON devices.id = devicegroups.deviceId
+        LEFT JOIN groups ON devicegroups.groupId = groups.id
+        LEFT JOIN applicationversions ON configurations.mainAppId = applicationversions.id
+        LEFT JOIN applications ON applications.id = applicationversions.applicationId
+        ORDER BY 
+            allowedDevices.sortingValue
+            <if test="sortDir.equalsIgnoreCase('desc')">
+                DESC
+            </if>,
+            allowedDevices.searchPriority DESC,
+            LOWER(devices.number),
+            LOWER(groups.name);
     </select>
+
 
     <select id="countAllDevices" parameterType="DeviceSearchRequest" resultType="long">
         SELECT COUNT(DISTINCT devices.id) AS counter
         FROM devices
         INNER JOIN users ON users.id = #{userId}
-        LEFT JOIN deviceStatuses ON devices.id = deviceStatuses.deviceId
+        LEFT JOIN devicestatuses ON devices.id = devicestatuses.deviceId
         LEFT JOIN configurations ON devices.configurationId = configurations.id
-        LEFT JOIN applicationVersions ON configurations.mainAppId = applicationVersions.id
-        LEFT JOIN applications ON applications.id = applicationVersions.applicationid
-        LEFT JOIN deviceGroups ON devices.id = deviceGroups.deviceId
-        LEFT JOIN groups ON deviceGroups.groupId = groups.id
-        LEFT JOIN userDeviceGroupsAccess access ON groups.id = access.groupId AND access.userId = users.id
+        LEFT JOIN applicationversions ON configurations.mainAppId = applicationversions.id
+        LEFT JOIN applications ON applications.id = applicationversions.applicationid
+        LEFT JOIN devicegroups ON devices.id = devicegroups.deviceId
+        LEFT JOIN groups ON devicegroups.groupId = groups.id
+        LEFT JOIN userdevicegroupsaccess access ON groups.id = access.groupId AND access.userId = users.id
         WHERE devices.customerId = #{customerId}
         AND (users.allDevicesAvailable = TRUE OR NOT access.id IS NULL)
         <if test="value != null &amp;&amp; !fastSearch">
             AND (
-            devices.number ILIKE #{value}
-            OR devices.description ILIKE #{value}
-            OR devices.imei ILIKE #{value}
-            OR devices.phone ILIKE #{value}
-            OR devices.publicIp ILIKE #{value}
-            OR devices.infojson -&gt;&gt; 'imei' ILIKE #{value}
-            OR devices.infojson -&gt;&gt; 'phone' ILIKE #{value}
-            OR devices.infojson -&gt;&gt; 'model' ILIKE #{value}
-            OR devices.infojson -&gt;&gt; 'serial' ILIKE #{value}
-            OR devices.custom1 ILIKE #{value}
-            OR devices.custom2 ILIKE #{value}
-            OR devices.custom3 ILIKE #{value}
-            OR devices.oldNumber ILIKE #{value}
-            OR configurations.name ILIKE #{value}
-            OR groups.name ILIKE #{value}
+            devices.number LIKE #{value}
+            OR devices.description LIKE #{value}
+            OR devices.imei LIKE #{value}
+            OR devices.phone LIKE #{value}
+            OR devices.publicIp LIKE #{value}
+            OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.imei')) LIKE #{value}
+            OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.phone')) LIKE #{value}
+            OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.model')) LIKE #{value}
+            OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.serial')) LIKE #{value}
+            OR devices.custom1 LIKE #{value}
+            OR devices.custom2 LIKE #{value}
+            OR devices.custom3 LIKE #{value}
+            OR devices.oldNumber LIKE #{value}
+            OR configurations.name LIKE #{value}
+            OR groups.name LIKE #{value}
             )
         </if>
         <if test="value != null &amp;&amp; fastSearch">
@@ -311,7 +334,7 @@
             )
         </if>
         <if test="imeiChanged">
-            AND devices.imeiUpdateTs / 1000 > extract(epoch from (now() - interval '1 hour'))
+            and devices.imeiUpdateTs / 1000 > unix_timestamp(now() - interval 1 hour)
         </if>
         <if test="groupId != null &amp;&amp; groupId > 0">
             AND (
@@ -335,12 +358,12 @@
         </if>
         <if test="onlineEarlierMillis != null">
             AND (
-            devices.lastUpdate &lt;= extract(epoch from now()) * 1000 - #{onlineEarlierMillis}
+            devices.lastUpdate &lt;= unix_timestamp(now()) * 1000 - #{onlineEarlierMillis}
             )
         </if>
         <if test="onlineLaterMillis != null">
             AND (
-            devices.lastUpdate >= extract(epoch from now()) * 1000 - #{onlineLaterMillis}
+            devices.lastUpdate >= unix_timestamp(now()) * 1000 - #{onlineLaterMillis}
             )
         </if>
         <if test="enrollmentDateFrom != null">
@@ -355,17 +378,17 @@
         </if>
         <if test="mdmMode != null">
             AND (
-            (devices.infojson -&gt;&gt; 'mdmMode')::BOOLEAN = #{mdmMode}
+            (JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.mdmMode')) = #{mdmMode})
             )
         </if>
         <if test="kioskMode != null">
             AND (
-            (devices.infojson -&gt;&gt; 'kioskMode')::BOOLEAN = #{kioskMode}
+            (JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.kioskMode')) = #{kioskMode})
             )
         </if>
         <if test="androidVersion != null">
             AND (
-            devices.infojson -&gt;&gt; 'androidVersion' = #{androidVersion}
+            JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.androidVersion')) = #{androidVersion}
             )
         </if>
         <if test="launcherVersion != null">
@@ -375,7 +398,7 @@
         </if>
         <if test="installationStatus != null">
             AND (
-            deviceStatuses.applicationsStatus = #{installationStatus}
+            devicestatuses.applicationsStatus = #{installationStatus}
             )
         </if>
     </select>
@@ -384,16 +407,16 @@
         SELECT COUNT(DISTINCT devices.id) AS counter
         FROM devices
         INNER JOIN users ON users.id = #{userId}
-        LEFT JOIN deviceStatuses ON devices.id = deviceStatuses.deviceId
-        LEFT JOIN deviceGroups ON devices.id = deviceGroups.deviceId
-        LEFT JOIN groups ON deviceGroups.groupId = groups.id
-        LEFT JOIN userDeviceGroupsAccess access ON groups.id = access.groupId AND access.userId = users.id
+        LEFT JOIN devicestatuses ON devices.id = devicestatuses.deviceId
+        LEFT JOIN devicegroups ON devices.id = devicegroups.deviceId
+        LEFT JOIN groups ON devicegroups.groupId = groups.id
+        LEFT JOIN userdevicegroupsaccess access ON groups.id = access.groupId AND access.userId = users.id
         WHERE devices.customerId = #{customerId}
         <if test="fileStatus != null">
-            AND deviceStatuses.configFilesStatus = #{fileStatus}
+            AND devicestatuses.configFilesStatus = #{fileStatus}
         </if>
         <if test="appStatus != null">
-            AND deviceStatuses.applicationsStatus = #{appStatus}
+            AND devicestatuses.applicationsStatus = #{appStatus}
         </if>
         <if test="minEnrollTime != null">
             AND devices.enrollTime &gt; #{minEnrollTime}
@@ -415,16 +438,16 @@
         FROM devices
         INNER JOIN users ON users.id = #{userId}
         LEFT JOIN configurations on devices.configurationId = configurations.id
-        LEFT JOIN deviceStatuses ON devices.id = deviceStatuses.deviceId
-        LEFT JOIN deviceGroups ON devices.id = deviceGroups.deviceId
-        LEFT JOIN groups ON deviceGroups.groupId = groups.id
-        LEFT JOIN userDeviceGroupsAccess access ON groups.id = access.groupId AND access.userId = users.id
+        LEFT JOIN devicestatuses ON devices.id = devicestatuses.deviceId
+        LEFT JOIN devicegroups ON devices.id = devicegroups.deviceId
+        LEFT JOIN groups ON devicegroups.groupId = groups.id
+        LEFT JOIN userdevicegroupsaccess access ON groups.id = access.groupId AND access.userId = users.id
         WHERE devices.customerId = #{customerId}
         <if test="fileStatus != null">
-            AND deviceStatuses.configFilesStatus = #{fileStatus}
+            AND devicestatuses.configFilesStatus = #{fileStatus}
         </if>
         <if test="appStatus != null">
-            AND deviceStatuses.applicationsStatus = #{appStatus}
+            AND devicestatuses.applicationsStatus = #{appStatus}
         </if>
         <if test="minEnrollTime != null">
             AND devices.enrollTime &gt; #{minEnrollTime}
@@ -465,7 +488,7 @@
 
     <select id="getDeviceByImeiOrSerial" resultMap="deviceResult">
         <include refid="deviceWithGroupsSelect"/>
-        WHERE devices.imei = #{number} OR devices.infojson -&gt;&gt; 'imei' = #{number} OR devices.infojson -&gt;&gt; 'serial' = #{number}
+    WHERE devices.imei = #{number} OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.imei')) = #{number} OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.serial')) = #{number}
     </select>
 
     <select id="getDeviceById" resultMap="deviceResult">
@@ -481,11 +504,11 @@
                         devices.imei   AS imei,
                         devices.info   AS info,
                         (
-                                COALESCE(CASE WHEN devices.number ILIKE #{filter} THEN 4 END, 0) +
-                                COALESCE(CASE WHEN devices.imei ILIKE #{filter} THEN 2 END, 0) +
-                                COALESCE(
-                                        CASE WHEN devices.infojson -&gt;&gt; 'imei' ILIKE #{filter} THEN 1 END,
-                                        0)
+                                COALESCE(CASE WHEN devices.number LIKE #{filter} THEN 4 END, 0) +
+                                COALESCE(CASE WHEN devices.imei LIKE #{filter} THEN 2 END, 0) +
+                COALESCE(
+                    CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.imei')) LIKE #{filter} THEN 1 END,
+                    0)
                             )          AS searchPriority
                  FROM devices
                           INNER JOIN users ON users.id = #{userId}
@@ -493,16 +516,16 @@
                    AND (users.allDevicesAvailable = TRUE
                      OR
                         EXISTS(SELECT 1
-                               FROM deviceGroups
-                                        INNER JOIN userDeviceGroupsAccess access
-                                                   ON deviceGroups.groupId = access.groupId AND access.userId = users.id
-                               WHERE devices.id = deviceGroups.deviceId
+                               FROM devicegroups
+                                        INNER JOIN userdevicegroupsaccess access
+                                                   ON devicegroups.groupId = access.groupId AND access.userId = users.id
+                               WHERE devices.id = devicegroups.deviceId
                             )
                      )
                    AND (
-                         devices.number ILIKE #{filter}
-                         OR devices.imei ILIKE #{filter}
-                         OR devices.infojson -&gt;&gt; 'imei' ILIKE #{filter}
+                         devices.number LIKE #{filter}
+                         OR devices.imei LIKE #{filter}
+                         OR JSON_UNQUOTE(JSON_EXTRACT(devices.infojson, '$.imei')) LIKE #{filter}
                      )
                  ORDER BY searchPriority DESC
              ) searchRsults
@@ -511,7 +534,7 @@
     </select>
 
     <insert id="insertDeviceGroups">
-        INSERT INTO deviceGroups (deviceId, groupId) VALUES
+        INSERT INTO devicegroups (deviceId, groupId) VALUES
         <foreach item="groupId" index="index" collection="groups"
                  open="" separator="," close="">
             (#{id}, #{groupId})
@@ -522,7 +545,7 @@
         SELECT groups.*
         FROM groups
         INNER JOIN users ON users.id = #{userId}
-        LEFT JOIN userDeviceGroupsAccess access ON groups.id = access.groupId AND access.userId = users.id
+        LEFT JOIN userdevicegroupsaccess access ON groups.id = access.groupId AND access.userId = users.id
         WHERE groups.customerId=#{customerId}
         AND (users.allDevicesAvailable = TRUE OR NOT access.id IS NULL)
         ORDER BY name
@@ -532,21 +555,21 @@
         SELECT groups.*
         FROM groups
         INNER JOIN users ON users.id = #{userId}
-        LEFT JOIN userDeviceGroupsAccess access ON groups.id = access.groupId AND access.userId = users.id
+        LEFT JOIN userdevicegroupsaccess access ON groups.id = access.groupId AND access.userId = users.id
         WHERE groups.customerId=#{customerId}
-        AND groups.name ILIKE #{value}
+        AND groups.name LIKE #{value}
         AND (users.allDevicesAvailable = TRUE OR NOT access.id IS NULL)
         ORDER BY name
     </select>
 
     <insert id="insertDeviceApplicationSettings">
-        INSERT INTO deviceApplicationSettings (extRefId, applicationId, name, type, value, comment, readonly, lastUpdate)
+        INSERT INTO deviceapplicationsettings
+            (extRefId, applicationId, name, type, value, comment, readonly, lastUpdate)
         VALUES
         <foreach item="item" index="index" collection="appSettings"
-                 open="" separator="," close="">
-            (${id}, #{item.applicationId}, #{item.name}, #{item.type}, #{item.value}, #{item.comment}, #{item.readonly}, #{item.lastUpdate})
+                open="(" separator="),(" close=")">
+            #{id}, #{item.applicationId}, #{item.name}, #{item.type}, #{item.value}, #{item.comment}, #{item.readonly}, #{item.lastUpdate}
         </foreach>
     </insert>
-
 
 </mapper>

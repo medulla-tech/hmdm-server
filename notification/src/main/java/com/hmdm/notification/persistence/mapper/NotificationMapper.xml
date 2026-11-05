@@ -24,7 +24,7 @@
 <mapper namespace="com.hmdm.notification.persistence.mapper.NotificationMapper">
 
     <update id="markMessagesAsDelivered">
-        UPDATE pendingPushes SET status = 1, sendTime = EXTRACT(EPOCH FROM NOW()) * 1000 WHERE messageId IN
+        UPDATE pendingpushes SET status = 1, sendTime = UNIX_TIMESTAMP(NOW()) * 1000 WHERE messageId IN
         <foreach item="item" index="index" collection="messageIds" open="(" separator="," close=")">
             #{item}
         </foreach>

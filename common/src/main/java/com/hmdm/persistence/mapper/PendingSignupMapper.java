@@ -32,17 +32,16 @@ import org.apache.ibatis.annotations.*;
  */
 public interface PendingSignupMapper {
 
-    @Insert({"INSERT INTO pendingSignup (email, signupTime, language, token) " +
-             "VALUES ( #{email}, #{signupTime}, #{language}, #{token}) ON CONFLICT ON CONSTRAINT pendingSignup_email_key DO " +
-             "UPDATE SET signupTime = EXCLUDED.signupTime, language = EXCLUDED.language, token = EXCLUDED.token"})
+    @Insert({"INSERT INTO pendingsignup (email, signupTime, language, token) " +
+             "VALUES ( #{email}, #{signupTime}, #{language}, #{token}) ON DUPLICATE KEY UPDATE signupTime = VALUES(signupTime), language = VALUES(language), token = VALUES(token)"})
     void insert(PendingSignup data);
 
-    @Select({"SELECT * FROM pendingSignup WHERE email=#{email}"})
+    @Select({"SELECT * FROM pendingsignup WHERE email=#{email}"})
     PendingSignup getByEmail(@Param("email") String email);
 
-    @Select({"SELECT * FROM pendingSignup WHERE token=#{token}"})
+    @Select({"SELECT * FROM pendingsignup WHERE token=#{token}"})
     PendingSignup getByToken(@Param("token") String token);
 
-    @Delete({"DELETE FROM pendingSignup WHERE email=#{email}"})
+    @Delete({"DELETE FROM pendingsignup WHERE email=#{email}"})
     void remove(@Param("email") String email);
 }

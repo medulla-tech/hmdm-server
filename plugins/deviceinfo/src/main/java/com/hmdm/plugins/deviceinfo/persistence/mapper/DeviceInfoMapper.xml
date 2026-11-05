@@ -73,12 +73,12 @@
             mobile2.tx AS mobile2Tx,
             mobile2.rx AS mobile2Rx
 
-        FROM plugin_deviceinfo_deviceParams p
-                 LEFT JOIN plugin_deviceinfo_deviceParams_device main ON main.recordId = p.id
-                 LEFT JOIN plugin_deviceinfo_deviceParams_wifi wifi ON wifi.recordId = p.id
-                 LEFT JOIN plugin_deviceinfo_deviceParams_gps gps ON gps.recordId = p.id
-                 LEFT JOIN plugin_deviceinfo_deviceParams_mobile mobile ON mobile.recordId = p.id
-                 LEFT JOIN plugin_deviceinfo_deviceParams_mobile2 mobile2 ON mobile2.recordId = p.id
+        FROM plugin_deviceinfo_deviceparams p
+                 LEFT JOIN plugin_deviceinfo_deviceparams_device main ON main.recordId = p.id
+                 LEFT JOIN plugin_deviceinfo_deviceparams_wifi wifi ON wifi.recordId = p.id
+                 LEFT JOIN plugin_deviceinfo_deviceparams_gps gps ON gps.recordId = p.id
+                 LEFT JOIN plugin_deviceinfo_deviceparams_mobile mobile ON mobile.recordId = p.id
+                 LEFT JOIN plugin_deviceinfo_deviceparams_mobile2 mobile2 ON mobile2.recordId = p.id
 
 
     </sql>
@@ -86,7 +86,7 @@
     <sql id="dynamicDataConditions">
         WHERE p.deviceId = #{deviceId}
         <if test="useFixedInterval">
-            AND (p.ts &gt;= (EXTRACT(EPOCH FROM NOW()) - #{fixedInterval}) * 1000)
+            AND (p.ts &gt;= (UNIX_TIMESTAMP(NOW()) - #{fixedInterval}) * 1000)
         </if>
         <if test="!useFixedInterval">
             <if test="dateFrom != null">
@@ -106,13 +106,13 @@
         <include refid="dynamicDataConditions"/>
 
         ORDER BY p.ts DESC
-        OFFSET (#{pageNum} - 1) * #{pageSize}
-        LIMIT #{pageSize}
+        <bind name="offset" value="(pageNum - 1) * pageSize"/>
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="countAllDynamicData" parameterType="com.hmdm.plugins.deviceinfo.rest.json.DynamicInfoFilter" resultType="long">
         SELECT COUNT(*)
-        FROM plugin_deviceinfo_deviceParams p
+        FROM plugin_deviceinfo_deviceparams p
 
         <include refid="dynamicDataConditions"/>
 

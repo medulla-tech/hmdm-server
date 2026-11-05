@@ -96,6 +96,13 @@ public class UploadedFileDAO extends AbstractDAO<UploadedFile> {
     }
 
     public void update(UploadedFile file) {
+        // Preserve customerId if it's 0 (not sent from UI)
+        if (file.getId() != null && file.getCustomerId() == 0) {
+            UploadedFile existingFile = this.fileMapper.findById(file.getId());
+            if (existingFile != null) {
+                file.setCustomerId(existingFile.getCustomerId());
+            }
+        }
         updateRecord(file, this.fileMapper::update, SecurityException::onUploadedFileAccessViolation);
     }
 

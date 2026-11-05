@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context>
     <!-- database configurations -->
-    <Parameter name="JDBC.driver"   value="org.postgresql.Driver"/>
-    <Parameter name="JDBC.url"      value="jdbc:postgresql://_SQL_HOST_:_SQL_PORT_/_SQL_BASE_"/>
-    <Parameter name="JDBC.username" value="_SQL_USER_"/>
-    <Parameter name="JDBC.password" value="_SQL_PASS_"/>
+     <Parameter name="JDBC.driver"   value="org.mariadb.jdbc.Driver"/>
+     <Parameter name="JDBC.url"      value="jdbc:mariadb://_SQL_HOST_:_SQL_PORT_/_SQL_BASE_"/>
+     <Parameter name="JDBC.username" value="_SQL_USER_"/>
+     <Parameter name="JDBC.password" value="_SQL_PASS_"/>
 
     <!-- This directory is used to as a base directory to store app data -->
     <Parameter name="base.directory" value="_BASE_DIRECTORY_"/>
@@ -31,7 +31,7 @@
     <Parameter name="plugins.files.directory" value="_BASE_DIRECTORY_/plugins"/>
 
     <!-- Configuration for logging plugin, do not change this -->
-    <Parameter name="plugin.devicelog.persistence.config.class" value="com.hmdm.plugins.devicelog.persistence.postgres.DeviceLogPostgresPersistenceConfiguration"/>
+    <Parameter name="plugin.devicelog.persistence.config.class" value="com.hmdm.plugins.devicelog.persistence.mysql.DeviceLogMysqlPersistenceConfiguration"/>
 
     <!-- Don't change this -->
     <Parameter name="role.orgadmin.id" value="2"/>
@@ -47,7 +47,7 @@
     <Parameter name="aapt.command" value="aapt"/>
 
     <!-- MQTT notification service parameters -->
-    <Parameter name="mqtt.server.uri" value="_BASE_DOMAIN_:31000"/>
+    <Parameter name="mqtt.server.uri" value="_MQTT_SERVER_URI_:31000"/>
 
     <!-- Optional tag for delaying MQTT messages in milliseconds
      to avoid congestion when all devices are updating configuration at the same time -->
@@ -85,5 +85,22 @@
      The default language is en -->
     <Parameter name="email.recovery.subj" value="_BASE_DIRECTORY_/emails/_LANGUAGE_/recovery_subj.txt"/>
     <Parameter name="email.recovery.body" value="_BASE_DIRECTORY_/emails/_LANGUAGE_/recovery_body.txt"/>
+
+    <!-- Optional: LDAP authentication. Set auth.class to Ldap and configure the parameters below.
+         ldap.admin.bind=false: direct bind using ldap.user.dn template (use {0} as login placeholder).
+         ldap.admin.bind=true: admin search bind; set ldap.default.role to auto-provision new users. -->
+    <!--
+    <Parameter name="auth.class" value="Ldap"/>
+    <Parameter name="ldap.host" value="ldap.example.com"/>
+    <Parameter name="ldap.port" value="389"/>
+    <Parameter name="ldap.base.dn" value="dc=example,dc=com"/>
+    <Parameter name="ldap.admin.bind" value="true"/>
+    <Parameter name="ldap.admin.dn" value="cn=admin,dc=example,dc=com"/>
+    <Parameter name="ldap.admin.password" value="secret"/>
+    <Parameter name="ldap.username.attribute" value="uid"/>
+    <Parameter name="ldap.user.dn" value=""/>
+    <Parameter name="ldap.default.role" value="Technician"/>
+    <Parameter name="ldap.customer.id" value="1"/>
+    -->
 
 </Context>

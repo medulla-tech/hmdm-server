@@ -41,13 +41,13 @@
             pmm.customerId = #{customerId}
         <if test="deviceFilter != null">
             AND (
-            devices.number ILIKE #{deviceFilter}
+            devices.number LIKE #{deviceFilter}
             )
         </if>
         <if test="messageFilter != null">
             AND (
-            pmm.messageType ILIKE #{messageFilter} OR
-            pmm.payload ILIKE #{messageFilter}
+            pmm.messageType LIKE #{messageFilter} OR
+            pmm.payload LIKE #{messageFilter}
             )
         </if>
         <if test="dateFrom != null">
@@ -72,14 +72,14 @@
                 ORDER BY devices.number ASC, pmm.ts DESC
             </if>
         </if>
-        OFFSET (#{pageNum} - 1) * #{pageSize}
-        LIMIT #{pageSize}
+        <bind name="offset" value="(pageNum - 1) * pageSize"/>
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <select id="countAll"
             parameterType="com.hmdm.plugins.push.rest.json.PushMessageFilter"
             resultType="long">
-        SELECT COUNT(pmm.*) AS counter
+    SELECT COUNT(*) AS counter
         FROM plugin_push_messages pmm
         <if test="deviceFilter != null">
             LEFT JOIN devices ON devices.id = pmm.deviceId
@@ -88,13 +88,13 @@
             pmm.customerId = #{customerId}
         <if test="deviceFilter != null">
             AND (
-            devices.number ILIKE #{deviceFilter}
+            devices.number LIKE #{deviceFilter}
             )
         </if>
         <if test="messageFilter != null">
             AND (
-            pmm.messageType ILIKE #{messageFilter} OR
-            pmm.payload ILIKE #{messageFilter}
+            pmm.messageType LIKE #{messageFilter} OR
+            pmm.payload LIKE #{messageFilter}
             )
         </if>
         <if test="dateFrom != null">

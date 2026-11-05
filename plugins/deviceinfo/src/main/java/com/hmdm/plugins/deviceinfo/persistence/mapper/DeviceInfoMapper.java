@@ -61,20 +61,19 @@ public interface DeviceInfoMapper {
                     "VALUES (" +
                     "#{dataPreservePeriod}, #{intervalMins}, #{sendData}, #{customerId}" +
                     ") " +
-                    "ON CONFLICT ON CONSTRAINT plugin_deviceinfo_settings_customer_unique DO " +
-                    "UPDATE SET " +
-                    "dataPreservePeriod = EXCLUDED.dataPreservePeriod, " +
-                    "intervalMins = EXCLUDED.intervalMins, " +
-                    "sendData = EXCLUDED.sendData"
+                    "ON DUPLICATE KEY UPDATE " +
+                    "dataPreservePeriod = VALUES(dataPreservePeriod), " +
+                    "intervalMins = VALUES(intervalMins), " +
+                    "sendData = VALUES(sendData)"
     })
     void savePluginSettings(DeviceInfoPluginSettings settings);
 
-    @Insert("INSERT INTO plugin_deviceinfo_deviceParams (deviceId, customerId, ts) VALUES (#{deviceId}, #{customerId}, #{ts})")
-    @SelectKey(statement = "SELECT currval('plugin_deviceinfo_deviceParams_id_seq')",
+    @Insert("INSERT INTO plugin_deviceinfo_deviceparams (deviceId, customerId, ts) VALUES (#{deviceId}, #{customerId}, #{ts})")
+    @SelectKey(statement = "SELECT currval('plugin_deviceinfo_deviceparams_id_seq')",
             keyColumn = "id", keyProperty = "id", before = false, resultType = int.class)
     int insertDeviceInfoMain(DeviceDynamicInfo record);
 
-    @Insert("INSERT INTO plugin_deviceinfo_deviceParams_device (" +
+    @Insert("INSERT INTO plugin_deviceinfo_deviceparams_device (" +
             "  recordId," +
             "  batteryLevel," +
             "  batteryCharging," +
@@ -105,7 +104,7 @@ public interface DeviceInfoMapper {
             ")")
     int insertDeviceInfoGroupDevice(@Param("recordId") Integer recordId, @Param("item") DeviceData device);
 
-    @Insert("INSERT INTO plugin_deviceinfo_deviceParams_wifi (" +
+    @Insert("INSERT INTO plugin_deviceinfo_deviceparams_wifi (" +
             "  recordId," +
             "  rssi," +
             "  ssid," +
@@ -126,7 +125,7 @@ public interface DeviceInfoMapper {
             ")")
     int insertDeviceInfoGroupWifi(@Param("recordId") Integer recordId, @Param("item") WifiData wifi);
 
-    @Insert("INSERT INTO plugin_deviceinfo_deviceParams_gps (" +
+    @Insert("INSERT INTO plugin_deviceinfo_deviceparams_gps (" +
             "  recordId," +
             "  state," +
             "  lat," +
@@ -145,7 +144,7 @@ public interface DeviceInfoMapper {
             ")")
     int insertDeviceInfoGroupGps(@Param("recordId") Integer recordId, @Param("item") GpsData gps);
 
-    @Insert("INSERT INTO plugin_deviceinfo_deviceParams_mobile (" +
+    @Insert("INSERT INTO plugin_deviceinfo_deviceparams_mobile (" +
             "  recordId," +
             "  rssi," +
             "  carrier," +
@@ -168,7 +167,7 @@ public interface DeviceInfoMapper {
             ")")
     int insertDeviceInfoGroupMobile(@Param("recordId") Integer recordId, @Param("item") MobileData mobile);
 
-    @Insert("INSERT INTO plugin_deviceinfo_deviceParams_mobile2 (" +
+    @Insert("INSERT INTO plugin_deviceinfo_deviceparams_mobile2 (" +
             "  recordId," +
             "  rssi," +
             "  carrier," +
@@ -196,51 +195,52 @@ public interface DeviceInfoMapper {
      *
      * @return a number of deleted records.
      */
-    @Delete("DELETE FROM plugin_deviceinfo_deviceParams " +
-            "WHERE ts < (SELECT EXTRACT(EPOCH FROM DATE_TRUNC('day', NOW() - (pds.dataPreservePeriod || ' day')::INTERVAL)) * 1000 " +
+    @Delete("DELETE FROM plugin_deviceinfo_deviceparams " +
+            "WHERE ts < (SELECT UNIX_TIMESTAMP(DATE(NOW() - INTERVAL pds.dataPreservePeriod DAY)) * 1000 " +
             "            FROM plugin_deviceinfo_settings pds " +
             "            WHERE pds.customerId =  #{customerId})")
     int purgeDeviceInfoRecords(@Param("customerId") int customerId);
 
     @Select("SELECT " +
-            "    devices.id AS id," +
-            "    devices.number AS deviceNumber," +
-            "    devices.description AS description," +
-            "    devices.lastUpdate AS latestUpdateTime, " +
-            "    devices.imei AS imeiRequired, " +
-            "    devices.infojson ->> 'imei' AS imeiActual, " +
-            "    devices.phone AS phoneNumberRequired, " +
-            "    devices.infojson ->> 'phone' AS phoneNumberActual, " +
-            "    devices.infojson ->> 'model' AS model, " +
-            "    devices.infojson ->> 'androidVersion' AS osVersion, " +
-            "    devices.infojson ->> 'batteryLevel' AS batteryLevel," +
-            "    devices.infojson ->> 'mdmMode' AS mdmMode," +
-            "    devices.infojson ->> 'kioskMode' AS kioskMode," +
-            "    devices.infojson ->> 'launcherType' AS launcherType," +
-            "    devices.infojson ->> 'launcherPackage' AS launcherPackage," +
-            "    devices.infojson ->> 'defaultLauncher' AS defaultLauncher," +
-            "    devices.infojson ->> 'phone2' AS phone2," +
-            "    devices.infojson ->> 'imei2' AS imei2," +
-            "    devices.infojson ->> 'iccid' AS iccid," +
-            "    devices.infojson ->> 'imsi' AS imsi," +
-            "    devices.infojson ->> 'iccid2' AS iccid2," +
-            "    devices.infojson ->> 'imsi2' AS imsi2," +
-            "    devices.infojson ->> 'serial' AS serial," +
-            "    devices.infojson ->> 'cpu' AS cpu," +
-            "    COALESCE((devices.infojson -> 'permissions' ->> 0)::BOOLEAN, FALSE) AS adminPermission, " +
-            "    COALESCE((devices.infojson -> 'permissions' ->> 1)::BOOLEAN, FALSE) AS overlapPermission, " +
-            "    COALESCE((devices.infojson -> 'permissions' ->> 2)::BOOLEAN, FALSE) AS historyPermission, " +
-            "    COALESCE((devices.infojson -> 'permissions' ->> 3)::BOOLEAN, FALSE) AS accessibilityPermission  " +
-            "FROM devices " +
-            "WHERE devices.id = #{id}")
+            "    d.id AS id, " +
+            "    d.number AS deviceNumber, " +
+            "    d.description AS description, " +
+            "    d.lastUpdate AS latestUpdateTime, " +
+            "    d.imei AS imeiRequired, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.imei')) AS imeiActual, " +
+            "    d.phone AS phoneNumberRequired, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.phone')) AS phoneNumberActual, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.model')) AS model, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.androidVersion')) AS osVersion, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.batteryLevel')) AS batteryLevel, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.mdmMode')) AS mdmMode, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.kioskMode')) AS kioskMode, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.launcherType')) AS launcherType, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.launcherPackage')) AS launcherPackage, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.defaultLauncher')) AS defaultLauncher, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.phone2')) AS phone2, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.imei2')) AS imei2, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.iccid')) AS iccid, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.imsi')) AS imsi, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.iccid2')) AS iccid2, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.imsi2')) AS imsi2, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.serial')) AS serial, " +
+            "    JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.cpu')) AS cpu, " +
+            "    COALESCE(JSON_EXTRACT(d.infojson, '$.permissions[0]'), FALSE) AS adminPermission, " +
+            "    COALESCE(JSON_EXTRACT(d.infojson, '$.permissions[1]'), FALSE) AS overlapPermission, " +
+            "    COALESCE(JSON_EXTRACT(d.infojson, '$.permissions[2]'), FALSE) AS historyPermission, " +
+            "    COALESCE(JSON_EXTRACT(d.infojson, '$.permissions[3]'), FALSE) AS accessibilityPermission " +
+            "FROM devices d " +
+            "WHERE d.id = #{id}")
     DeviceInfo getDetailedDeviceInfo(@Param("id") int deviceId);
+
 
     @Select("SELECT " +
             "    groups.id AS id," +
             "    groups.name AS name " +
-            "FROM deviceGroups " +
-            "INNER JOIN groups ON groups.id = deviceGroups.groupId " +
-            "WHERE deviceGroups.deviceId = #{id} " +
+            "FROM devicegroups " +
+            "INNER JOIN groups ON groups.id = devicegroups.groupId " +
+            "WHERE devicegroups.deviceId = #{id} " +
             "ORDER BY groups.name ")
     List<LookupItem> getDeviceGroups(@Param("id") int deviceId);
 
@@ -293,14 +293,14 @@ public interface DeviceInfoMapper {
             "    mobile2.tx AS mobile2Tx," +
             "    mobile2.rx AS mobile2Rx" +
             " " +
-            "FROM plugin_deviceinfo_deviceParams p " +
-            "LEFT JOIN plugin_deviceinfo_deviceParams_device main ON main.recordId = p.id " +
-            "LEFT JOIN plugin_deviceinfo_deviceParams_wifi wifi ON wifi.recordId = p.id " +
-            "LEFT JOIN plugin_deviceinfo_deviceParams_gps gps ON gps.recordId = p.id " +
-            "LEFT JOIN plugin_deviceinfo_deviceParams_mobile mobile ON mobile.recordId = p.id " +
-            "LEFT JOIN plugin_deviceinfo_deviceParams_mobile2 mobile2 ON mobile2.recordId = p.id " +
+            "FROM plugin_deviceinfo_deviceparams p " +
+            "LEFT JOIN plugin_deviceinfo_deviceparams_device main ON main.recordId = p.id " +
+            "LEFT JOIN plugin_deviceinfo_deviceparams_wifi wifi ON wifi.recordId = p.id " +
+            "LEFT JOIN plugin_deviceinfo_deviceparams_gps gps ON gps.recordId = p.id " +
+            "LEFT JOIN plugin_deviceinfo_deviceparams_mobile mobile ON mobile.recordId = p.id " +
+            "LEFT JOIN plugin_deviceinfo_deviceparams_mobile2 mobile2 ON mobile2.recordId = p.id " +
             "WHERE p.deviceId = #{id} " +
-            "AND p.ts = (SELECT MAX(p2.ts) FROM plugin_deviceinfo_deviceParams p2 WHERE p2.deviceId = #{id}) " +
+            "AND p.ts = (SELECT MAX(p2.ts) FROM plugin_deviceinfo_deviceparams p2 WHERE p2.deviceId = #{id}) " +
             "LIMIT 1")
     DeviceDynamicInfoRecord getLatestDeviceDynamicInfo(@Param("id") int deviceId);
 

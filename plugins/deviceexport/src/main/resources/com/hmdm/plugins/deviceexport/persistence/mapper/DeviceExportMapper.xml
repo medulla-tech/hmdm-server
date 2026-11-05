@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hmdm.plugins.deviceexport.persistence.mapper.DeviceExportMapper">
+
+    <select id="getAllDevicesForExport"
+            resultType="com.hmdm.plugins.deviceexport.persistence.domain.DeviceExportRecord">
+        SELECT
+            d.id                                                                    AS id,
+            d.number                                                                AS number,
+            d.description                                                           AS description,
+            d.imei                                                                  AS imei,
+            d.phone                                                                 AS phone,
+            d.lastUpdate                                                            AS lastUpdate,
+            d.enrollTime                                                            AS enrollTime,
+            d.publicIp                                                              AS publicIp,
+            d.custom1                                                               AS custom1,
+            d.custom2                                                               AS custom2,
+            d.custom3                                                               AS custom3,
+            c.name                                                                  AS configName,
+            GROUP_CONCAT(DISTINCT g.name ORDER BY g.name SEPARATOR ',')             AS groupNames,
+            JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.androidVersion'))              AS androidVersion,
+            JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.serial'))                      AS serial,
+            av.version                                                              AS launcherVersion
+        FROM devices d
+        INNER JOIN users u ON u.id = #{userId}
+        LEFT JOIN configurations c ON d.configurationId = c.id
+        LEFT JOIN applicationversions av ON c.mainAppId = av.id
+        LEFT JOIN devicegroups dg ON d.id = dg.deviceId
+        LEFT JOIN groups g ON dg.groupId = g.id
+        LEFT JOIN userdevicegroupsaccess access ON g.id = access.groupId AND access.userId = u.id
+        WHERE d.customerId = #{customerId}
+          AND (u.allDevicesAvailable = TRUE OR access.id IS NOT NULL)
+          AND (
+                #{configurationId} IS NULL
+                OR #{configurationId} &lt;= 0
+                OR d.configurationId = #{configurationId}
+              )
+          AND (
+                #{filter} IS NULL
+                OR d.number LIKE CONCAT('%', #{filter}, '%')
+                OR d.description LIKE CONCAT('%', #{filter}, '%')
+              )
+          AND (
+                #{groupId} IS NULL
+                OR #{groupId} &lt;= 0
+                OR EXISTS (
+                    SELECT 1 FROM devicegroups dg2
+                    WHERE dg2.deviceId = d.id AND dg2.groupId = #{groupId}
+                )
+              )
+        GROUP BY
+            d.id, d.number, d.description, d.imei, d.phone, d.lastUpdate,
+            d.enrollTime, d.publicIp, d.custom1, d.custom2, d.custom3,
+            c.name,
+            JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.androidVersion')),
+            JSON_UNQUOTE(JSON_EXTRACT(d.infojson, '$.serial')),
+            av.version
+        ORDER BY d.number
+    </select>
+
+</mapper>

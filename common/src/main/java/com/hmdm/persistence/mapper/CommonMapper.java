@@ -60,14 +60,13 @@ public interface CommonMapper {
                     "#{desktopHeaderTemplate}, " +
                     "#{customerId}" +
                     ") " +
-                    "ON CONFLICT ON CONSTRAINT settings_customer_unique DO " +
-                    "UPDATE SET " +
-                    "backgroundColor = EXCLUDED.backgroundColor, " +
-                    "textColor = EXCLUDED.textColor, " +
-                    "backgroundImageUrl = EXCLUDED.backgroundImageUrl, " +
-                    "iconSize = EXCLUDED.iconSize, " +
-                    "desktopHeader = EXCLUDED.desktopHeader, " +
-                    "desktopHeaderTemplate = EXCLUDED.desktopHeaderTemplate"
+                    "ON DUPLICATE KEY UPDATE " +
+                    "backgroundColor = VALUES(backgroundColor), " +
+                    "textColor = VALUES(textColor), " +
+                    "backgroundImageUrl = VALUES(backgroundImageUrl), " +
+                    "iconSize = VALUES(iconSize), " +
+                    "desktopHeader = VALUES(desktopHeader), " +
+                    "desktopHeaderTemplate = VALUES(desktopHeaderTemplate)"
     })
     void saveDefaultDesignSettings(Settings settings);
 
@@ -81,10 +80,9 @@ public interface CommonMapper {
                     "#{language}, " +
                     "#{customerId}" +
                     ") " +
-                    "ON CONFLICT ON CONSTRAINT settings_customer_unique DO " +
-                    "UPDATE SET " +
-                    "useDefaultLanguage = EXCLUDED.useDefaultLanguage, " +
-                    "language = EXCLUDED.language"
+                    "ON DUPLICATE KEY UPDATE " +
+                    "useDefaultLanguage = VALUES(useDefaultLanguage), " +
+                    "language = VALUES(language)"
     })
     void saveLanguageSettings(Settings settings);
 
@@ -130,26 +128,25 @@ public interface CommonMapper {
                     "#{idleLogout}, " +
                     "#{customerId}" +
                     ") " +
-                    "ON CONFLICT ON CONSTRAINT settings_customer_unique DO " +
-                    "UPDATE SET " +
-                    "createNewDevices = EXCLUDED.createNewDevices, " +
-                    "newDeviceGroupId = EXCLUDED.newDeviceGroupId, " +
-                    "newDeviceConfigurationId = EXCLUDED.newDeviceConfigurationId, " +
-                    "phoneNumberFormat = EXCLUDED.phoneNumberFormat, " +
-                    "customPropertyName1 = EXCLUDED.customPropertyName1, " +
-                    "customPropertyName2 = EXCLUDED.customPropertyName2, " +
-                    "customPropertyName3 = EXCLUDED.customPropertyName3, " +
-                    "customMultiline1 = EXCLUDED.customMultiline1, " +
-                    "customMultiline2 = EXCLUDED.customMultiline2, " +
-                    "customMultiline3 = EXCLUDED.customMultiline3, " +
-                    "customSend1 = EXCLUDED.customSend1, " +
-                    "customSend2 = EXCLUDED.customSend2, " +
-                    "customSend3 = EXCLUDED.customSend3, " +
-                    "sendDescription = EXCLUDED.sendDescription, " +
-                    "passwordReset = EXCLUDED.passwordReset, " +
-                    "passwordLength = EXCLUDED.passwordLength, " +
-                    "passwordStrength = EXCLUDED.passwordStrength, " +
-                    "idleLogout = EXCLUDED.idleLogout "
+                    "ON DUPLICATE KEY UPDATE " +
+                    "createNewDevices = VALUES(createNewDevices), " +
+                    "newDeviceGroupId = VALUES(newDeviceGroupId), " +
+                    "newDeviceConfigurationId = VALUES(newDeviceConfigurationId), " +
+                    "phoneNumberFormat = VALUES(phoneNumberFormat), " +
+                    "customPropertyName1 = VALUES(customPropertyName1), " +
+                    "customPropertyName2 = VALUES(customPropertyName2), " +
+                    "customPropertyName3 = VALUES(customPropertyName3), " +
+                    "customMultiline1 = VALUES(customMultiline1), " +
+                    "customMultiline2 = VALUES(customMultiline2), " +
+                    "customMultiline3 = VALUES(customMultiline3), " +
+                    "customSend1 = VALUES(customSend1), " +
+                    "customSend2 = VALUES(customSend2), " +
+                    "customSend3 = VALUES(customSend3), " +
+                    "sendDescription = VALUES(sendDescription), " +
+                    "passwordReset = VALUES(passwordReset), " +
+                    "passwordLength = VALUES(passwordLength), " +
+                    "passwordStrength = VALUES(passwordStrength), " +
+                    "idleLogout = VALUES(idleLogout)"
     })
     void saveMiscSettings(Settings settings);
 
@@ -158,9 +155,8 @@ public interface CommonMapper {
                     ") VALUES (" +
                     "#{twoFactor}, #{customerId} " +
                     ") " +
-                    "ON CONFLICT ON CONSTRAINT settings_customer_unique DO " +
-                    "UPDATE SET " +
-                    "twoFactor = EXCLUDED.twoFactor "
+                    "ON DUPLICATE KEY UPDATE " +
+                    "twoFactor = VALUES(twoFactor)"
     })
     void setTwoFactor(Settings settings);
 

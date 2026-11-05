@@ -3,7 +3,7 @@ UPDATE userroles SET name='Admin', description='Full access to the control panel
 UPDATE userroles SET name='User', description='Limited access to the control panel' WHERE id=3;
 UPDATE userroles SET name='Observer', description='Read-only access to the control panel' WHERE id=100;
 
-UPDATE users SET email='_ADMIN_EMAIL_', passwordReset=true, passwordResetToken=md5(random()::text) WHERE id=1;
+UPDATE users SET email='_ADMIN_EMAIL_', passwordReset=1, passwordResetToken=MD5(RAND()) WHERE id=1;
 
 UPDATE groups SET name='General' WHERE id=1;
 
@@ -17,17 +17,17 @@ UPDATE plugins SET name='Images', description='Retrieve images from devices' WHE
 
 INSERT INTO settings (id, backgroundcolor, textcolor, backgroundimageurl, iconsize, desktopheader, customerid, usedefaultlanguage, language) VALUES (1, '#678ca6', '#ffffff', NULL, 'SMALL', 'NO_HEADER', 1, true, NULL);
 
-INSERT INTO userrolesettings (id, roleid, customerid, columndisplayeddevicestatus, columndisplayeddevicedate, columndisplayeddevicenumber, columndisplayeddevicemodel, columndisplayeddevicepermissionsstatus, columndisplayeddeviceappinstallstatus, columndisplayeddeviceconfiguration, columndisplayeddeviceimei, columndisplayeddevicephone, columndisplayeddevicedesc, columndisplayeddevicegroup, columndisplayedlauncherversion) VALUES 
+INSERT INTO userrolesettings (id, roleid, customerid, columndisplayeddevicestatus, columndisplayeddevicedate, columndisplayeddevicenumber, columndisplayeddevicemodel, columndisplayeddevicepermissionsstatus, columndisplayeddeviceappinstallstatus, columndisplayeddeviceconfiguration, columndisplayeddeviceimei, columndisplayeddevicephone, columndisplayeddevicedesc, columndisplayeddevicegroup, columndisplayedlauncherversion) VALUES
 (1, 1, 1, true, true, true, NULL, true, true, true, NULL, NULL, NULL, NULL, NULL),
 (2, 2, 1, true, true, true, NULL, true, true, true, NULL, NULL, NULL, NULL, NULL),
 (3, 3, 1, true, true, true, NULL, true, true, true, NULL, NULL, NULL, NULL, NULL),
 (4, 100, 1, true, true, true, NULL, true, true, true, NULL, NULL, NULL, NULL, NULL);
 
-SELECT pg_catalog.setval('public.settings_id_seq', 1, true);
+ALTER TABLE settings AUTO_INCREMENT = 2;
 
-ALTER TABLE applications DROP CONSTRAINT applications_latestversion_fkey;
+ALTER TABLE applications DROP FOREIGN KEY applications_ibfk_1;
 
-INSERT INTO applications (id, pkg, name, showicon, customerid, system, latestversion, runafterinstall) VALUES 
+INSERT INTO applications (id, pkg, name, showicon, customerid, system, latestversion, runafterinstall) VALUES
     (1, 'com.android.systemui', 'System UI', false, 1, true, 10000, false),
     (2, 'com.android.bluetooth', 'Bluetooth Service', false, 1, true, 10001, false),
     (3, 'com.google.android.gms', 'Google Services', false, 1, true, 10002, false),
@@ -123,11 +123,12 @@ INSERT INTO applications (id, pkg, name, showicon, customerid, system, latestver
     (96, 'com.samsung.android.kgclient', 'Knox Guard', true, 1, true, 10096, false),
     (97, 'com.sec.android.app.clockpackage', 'Samsung Clock', true, 1, true, 10097, false),
     (98, 'com.sec.android.app.sbrowser', 'Samsung Secure Browser', true, 1, true, 10098, false),
-    (99, 'com.google.android.GoogleCamera', 'Pixel Camera', true, 1, true, 10099, false);
+    (99, 'com.google.android.GoogleCamera', 'Pixel Camera', true, 1, true, 10099, false),
+    (100, 'org.glpi.inventory.agent', 'GLPI Agent', true, 1, false, 10100, false);
 
-SELECT pg_catalog.setval('public.applications_id_seq', 99, true);
+ALTER TABLE applications AUTO_INCREMENT = 101;
 
-INSERT INTO applicationversions (id, applicationid, version, url) VALUES 
+INSERT INTO applicationversions (id, applicationid, version, url) VALUES
     (10000, 1, '0', NULL),
     (10001, 2, '0', NULL),
     (10002, 3, '0', NULL),
@@ -223,21 +224,24 @@ INSERT INTO applicationversions (id, applicationid, version, url) VALUES
     (10096, 96, '0', NULL),
     (10097, 97, '0', NULL),
     (10098, 98, '0', NULL),
-    (10099, 99, '0', NULL);
-    
-SELECT pg_catalog.setval('public.applicationversions_id_seq', 10099, true);
+    (10099, 99, '0', NULL),
+    (10100, 100, '1.6.1', NULL);
+
+ALTER TABLE applicationversions AUTO_INCREMENT = 10101;
 
 ALTER TABLE applications ADD CONSTRAINT applications_latestversion_fkey FOREIGN KEY (latestversion) REFERENCES applicationversions(id) ON DELETE SET NULL;
-    
+
 DELETE FROM configurations;
-INSERT INTO configurations (id, name, description, type, password, backgroundcolor, textcolor, backgroundimageurl, iconsize, desktopheader, usedefaultdesignsettings, customerid, gps, bluetooth, wifi, mobiledata, mainappid, eventreceivingcomponent, kioskmode, qrcodekey, contentappid,autoupdate, blockstatusbar, systemupdatetype, systemupdatefrom, systemupdateto, pushoptions, keepalivetime, rundefaultlauncher, permissive, kioskexit) VALUES 
+ALTER TABLE configurations DROP FOREIGN KEY configurations_ibfk_1;
+
+INSERT INTO configurations (id, name, description, type, password, backgroundcolor, textcolor, backgroundimageurl, iconsize, desktopheader, usedefaultdesignsettings, customerid, gps, bluetooth, wifi, mobiledata, mainappid, eventreceivingcomponent, kioskmode, qrcodekey, contentappid, autoupdate, blockstatusbar, systemupdatetype, systemupdatefrom, systemupdateto, pushoptions, keepalivetime, rundefaultlauncher, permissive, kioskexit) VALUES
 (1, 'Managed Launcher', 'Displays a set of application icons predefined by the administrator. To show or hide applications, use the Applications tab.', 0, '12345678', '', '', NULL, 'SMALL', 'NO_HEADER', true, 1, NULL, NULL, NULL, NULL, 10045, 'com.hmdm.launcher.AdminReceiver', false, '6fb9c8dc81483173a0c0e9f8b2e46be1', NULL, false, false, 0, NULL, NULL, 'mqttAlarm', 300, NULL, NULL, true),
 (2, 'MIUI (Xiaomi Redmi)', 'Optimized for MIUI-running devices', 0, '12345678', '', '', NULL, 'SMALL', 'NO_HEADER', true, 1, NULL, NULL, NULL, NULL, 10045, 'com.hmdm.launcher.AdminReceiver', false, '8e6ca072ddb926a1af61578dfa9fc334', NULL, false, false, 0, NULL, NULL, 'mqttAlarm', 300, NULL, NULL, true),
 (3, 'Background (Agent) Mode', 'Headwind MDM is running in the background, it is used to install apps and track the device status. User can do everything (permissive mode).', 0, '12345678', '', '', NULL, 'SMALL', 'NO_HEADER', true, 1, NULL, NULL, NULL, NULL, 10045, 'com.hmdm.launcher.AdminReceiver', false, '350e0fb7fc3f4b7fe61cac75fd43818f', NULL, false, false, 0, NULL, NULL, 'mqttAlarm', 300, true, true, true);
 
-SELECT pg_catalog.setval('public.configurations_id_seq', 3, true);
+ALTER TABLE configurations AUTO_INCREMENT = 4;
 
-INSERT INTO configurationapplications (id, configurationid, applicationid, remove, showicon, applicationversionid) VALUES 
+INSERT INTO configurationapplications (id, configurationid, applicationid, remove, showicon, applicationversionid) VALUES
     (2, 1, 8, false, true, 10007),
     (3, 1, 37, false, false, 10036),
     (4, 1, 2, false, false, 10001),
@@ -417,13 +421,13 @@ INSERT INTO configurationapplications (id, configurationid, applicationid, remov
     (269, 3, 94, false, false, 10094),
     (270, 3, 95, false, false, 10095),
     (271, 3, 99, false, false, 10099);
-    
-SELECT pg_catalog.setval('public.configurationapplications_id_seq', 271, true);
+
+ALTER TABLE configurationapplications AUTO_INCREMENT = 272;
 
 INSERT INTO devices (id, number, description, lastupdate, configurationid, oldconfigurationid, info, imei, phone, customerid) VALUES (1, 'h0001', 'My first Android device', 0, 1, NULL, NULL, NULL, NULL, 1);
 
-SELECT pg_catalog.setval('public.devices_id_seq', 1, true);
+ALTER TABLE devices AUTO_INCREMENT = 2;
 
 INSERT INTO plugin_devicelog_settings_rules (id, settingid, name, active, applicationid, severity) VALUES (1, 1, 'Headwind MDM', true, 46, 'VERBOSE');
-SELECT pg_catalog.setval('public.plugin_devicelog_settings_rules_id_seq', 1, true);
 
+ALTER TABLE plugin_devicelog_settings_rules AUTO_INCREMENT = 2;

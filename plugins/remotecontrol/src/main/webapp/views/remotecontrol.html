@@ -1,0 +1,89 @@
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<div ng-controller="PluginRemoteControlController">
+  <div class="text-center" style="margin-bottom: 20px">
+    <h4>{{'plugin.remotecontrol.title' | localize}}</h4>
+  </div>
+
+  <div>
+    <div ng-show="errorMessage" class="alert alert-danger">
+      <span>{{errorMessage}}</span>
+    </div>
+    <div ng-show="statusMessage" class="alert alert-info">
+      <span>{{statusMessage}}</span>
+    </div>
+  </div>
+
+  <div ng-hide="connected || connecting" style="margin-bottom: 20px">
+    <form class="form-inline" ng-submit="startSession()">
+      <div class="form-group" style="margin-right: 10px">
+        <label style="margin-right: 5px">{{'plugin.remotecontrol.device.number' | localize}}</label>
+        <input
+          type="text"
+          class="form-control"
+          ng-model="deviceNumber"
+          localized-placeholder="plugin.remotecontrol.device.number.placeholder"
+          style="width: 250px"
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">{{'plugin.remotecontrol.connect' | localize}}</button>
+    </form>
+  </div>
+
+  <div ng-show="connected || connecting">
+    <div style="margin-bottom: 10px">
+      <button class="btn btn-danger" ng-click="stopSession()">{{'plugin.remotecontrol.disconnect' | localize}}</button>
+      <span style="margin-left: 15px" ng-show="session">
+        <span>{{'plugin.remotecontrol.device' | localize}}</span>:
+        <strong>{{session.deviceNumber}}</strong>
+      </span>
+    </div>
+
+    <div
+      ng-show="connected"
+      style="
+        position: relative;
+        display: inline-block;
+        border: 1px solid #ccc;
+        background: #000;
+      "
+    >
+      <video
+        id="rc-video"
+        autoplay
+        playsinline
+        style="max-width: 100%; max-height: 70vh; cursor: crosshair"
+        ng-mousedown="onVideoMouseDown($event)"
+        ng-mouseup="onVideoMouseUp($event)"
+        ng-mousemove="onVideoMouseMove($event)"
+      ></video>
+    </div>
+
+    <div ng-show="connected" style="margin-top: 10px">
+      <button class="btn btn-default" ng-click="sendBackKey()" title="Back">
+        <span class="glyphicon glyphicon-chevron-left"></span> Back
+      </button>
+      <button
+        class="btn btn-default"
+        ng-click="sendHomeKey()"
+        title="Home"
+        style="margin-left: 5px"
+      >
+        <span class="glyphicon glyphicon-home"></span> Home
+      </button>
+      <button
+        class="btn btn-default"
+        ng-click="sendRecentKey()"
+        title="Recent Apps"
+        style="margin-left: 5px"
+      >
+        <span class="glyphicon glyphicon-th"></span> Recent
+      </button>
+    </div>
+  </div>
+</div>

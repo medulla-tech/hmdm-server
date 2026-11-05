@@ -37,47 +37,47 @@ import java.util.List;
  */
 public interface NotificationMapper {
 
-    @Select("SELECT pushMessages.* " +
-            "FROM pendingPushes " +
-            "INNER JOIN pushMessages ON pushMessages.id = pendingPushes.messageId " +
-            "INNER JOIN devices ON devices.id = pushMessages.deviceId " +
+    @Select("SELECT pushmessages.* " +
+            "FROM pendingpushes " +
+            "INNER JOIN pushmessages ON pushmessages.id = pendingpushes.messageId " +
+            "INNER JOIN devices ON devices.id = pushmessages.deviceId " +
             "WHERE (devices.number = #{deviceNumber} OR devices.oldNumber = #{deviceNumber}) " +
-            "AND pendingPushes.status = 0 " +
-            "ORDER BY pendingPushes.createTime ASC")
+            "AND pendingpushes.status = 0 " +
+            "ORDER BY pendingpushes.createTime ASC")
     List<PushMessage> getPendingMessagesByNumber(@Param("deviceNumber") String deviceNumber);
 
-    @Select("SELECT pushMessages.* " +
-            "FROM pendingPushes " +
-            "INNER JOIN pushMessages ON pushMessages.id = pendingPushes.messageId " +
-            "WHERE pushMessages.deviceId = #{deviceId} " +
-            "AND pendingPushes.status = 0 " +
-            "ORDER BY pendingPushes.createTime ASC")
+    @Select("SELECT pushmessages.* " +
+            "FROM pendingpushes " +
+            "INNER JOIN pushmessages ON pushmessages.id = pendingpushes.messageId " +
+            "WHERE pushmessages.deviceId = #{deviceId} " +
+            "AND pendingpushes.status = 0 " +
+            "ORDER BY pendingpushes.createTime ASC")
     List<PushMessage> getPendingMessagesById(@Param("deviceId") int deviceId);
 
     void markMessagesAsDelivered(@Param("messageIds") List<Integer> messageIds);
 
-    @Insert("INSERT INTO pushMessages (messageType, deviceId, payload) " +
+    @Insert("INSERT INTO pushmessages (messageType, deviceId, payload) " +
             "VALUES (#{messageType}, #{deviceId}, #{payload})")
     @SelectKey( statement = "SELECT currval('pushmessages_id_seq')", keyColumn = "id", keyProperty = "id", before = false, resultType = int.class )
     void insertPushMessage(PushMessage message);
 
-    @Insert("INSERT INTO pendingPushes (messageId, status, createTime) " +
-            "VALUES (#{messageId}, 0, EXTRACT(EPOCH FROM NOW()) * 1000)")
+    @Insert("INSERT INTO pendingpushes (messageId, status, createTime) " +
+            "VALUES (#{messageId}, 0, UNIX_TIMESTAMP(NOW()) * 1000)")
     void insertPendingPush(int messageId);
 
-    @Select("SELECT status FROM pendingPushes WHERE messageId = #{messageId}")
+    @Select("SELECT status FROM pendingpushes WHERE messageId = #{messageId}")
     Integer getDeliveryStatus(@Param("messageId") int messageId);
 
-    @Delete("DELETE FROM pushMessages " +
+    @Delete("DELETE FROM pushmessages " +
             "WHERE EXISTS " +
             "(" +
             " SELECT 1 " +
-            " FROM pendingPushes " +
-            " WHERE pendingPushes.messageId = pushMessages.id " +
+            " FROM pendingpushes " +
+            " WHERE pendingpushes.messageId = pushmessages.id " +
             " AND (" +
-            "      pendingPushes.status = 0 AND EXTRACT(EPOCH FROM NOW()) * 1000 - pendingPushes.createTime >= #{d1}" +
+            "      pendingpushes.status = 0 AND UNIX_TIMESTAMP(NOW()) * 1000 - pendingpushes.createTime >= #{d1}" +
             "      OR " +
-            "      pendingPushes.status = 1 AND NOT pendingPushes.sendTime IS NULL AND EXTRACT(EPOCH FROM NOW()) * 1000 - pendingPushes.sendTime >= #{d2}" +
+            "      pendingpushes.status = 1 AND NOT pendingpushes.sendTime IS NULL AND UNIX_TIMESTAMP(NOW()) * 1000 - pendingpushes.sendTime >= #{d2}" +
             "     )" +
             ")")
     void purgeMessages(@Param("d1") long nonDeliveredMessagesLifeSpan, @Param("d2") long deliveredMessagesLifeSpan);

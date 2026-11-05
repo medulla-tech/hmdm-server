@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~
+  ~ SPDX-FileCopyrightText: 2024-2026 Medulla / Natsu, http://www.medulla-tech.io
+  ~ SPDX-License-Identifier: GPL-3.0-or-later
+  ~
+  -->
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd"
+        logicalFilePath="contacts.changelog.xml">
+
+    <!--
+    NOTE: Before deploying, clean any failed previous attempts:
+        DELETE FROM DATABASECHANGELOG WHERE id LIKE 'plugin-contacts%';
+        DROP TABLE IF EXISTS plugin_contacts;
+        DELETE FROM plugins WHERE identifier = 'contacts';
+    -->
+
+    <changeSet id="plugin-contacts-11.03.2026-01" author="custom" context="common">
+        <comment>Cleanup: drop old incorrectly-designed table if present</comment>
+        <sql>DROP TABLE IF EXISTS plugin_contacts;</sql>
+        <rollback><!-- no rollback needed --></rollback>
+    </changeSet>
+
+    <changeSet id="plugin-contacts-11.03.2026-02" author="custom" context="common">
+        <comment>Plugin,new: contacts (VCF-based server-to-device sync)</comment>
+        <sql>
+            INSERT INTO plugins (
+                identifier, name, description,
+                javascriptModuleFile,
+                functionsViewTemplate,
+                settingsViewTemplate,
+                namelocalizationkey,
+                settingsPermission, functionsPermission, deviceFunctionsPermission,
+                enabledForDevice
+            ) VALUES (
+                'contacts', 'Contacts Sync', 'Push contacts from a VCF file to managed devices',
+                'app/components/plugins/contacts/contacts.module.js',
+                'app/components/plugins/contacts/views/contacts.html',
+                NULL,
+                'plugin.contacts.name',
+                'plugin_contacts_access',
+                'plugin_contacts_access',
+                'plugin_contacts_access',
+                TRUE
+            );
+        </sql>
+        <rollback>
+            DELETE FROM plugins WHERE identifier = 'contacts';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-contacts-11.03.2026-03" author="custom" context="common">
+        <comment>Permission,new: plugin_contacts_access</comment>
+        <sql>
+            INSERT INTO permissions (name, description) VALUES ('plugin_contacts_access', 'Access to contacts sync plugin');
+            INSERT INTO userrolepermissions (roleId, permissionId)
+                SELECT id, currval('permissions_id_seq')
+                FROM userroles;
+        </sql>
+        <rollback>
+            DELETE FROM permissions WHERE name = 'plugin_contacts_access';
+        </rollback>
+    </changeSet>
+
+    <changeSet id="plugin-contacts-11.03.2026-04" author="custom" context="common">
+        <comment>Table,new: plugin_contacts_config (per-configuration VCF sync settings)</comment>
+        <sql>
+            CREATE TABLE plugin_contacts_config (
+                id              INT NOT NULL AUTO_INCREMENT,
+                configurationId INT NOT NULL,
+                url             VARCHAR(2000),
+                login           VARCHAR(256),
+                password        VARCHAR(256),
+                accountType     VARCHAR(256),
+                syncInterval    INT NOT NULL DEFAULT 0,
+                wipeContacts    TINYINT NOT NULL DEFAULT 0,
+                CONSTRAINT plugin_contacts_config_pr_key PRIMARY KEY (id),
+                CONSTRAINT plugin_contacts_config_configId_fkey FOREIGN KEY (configurationId) REFERENCES configurations(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+            ALTER TABLE plugin_contacts_config ADD CONSTRAINT plugin_contacts_config_configId_unique UNIQUE (configurationId);
+        </sql>
+        <rollback>
+            DROP TABLE plugin_contacts_config;
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

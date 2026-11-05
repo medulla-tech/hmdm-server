@@ -283,6 +283,11 @@
         </div>
     </div>
 
+    <!-- GPS Map -->
+    <div ng-show="locationAvailable" class="row margin-top-20">
+        <div id="deviceLocationMap" style="height: 350px;"></div>
+    </div>
+
     <div ng-if="deviceInfo" class="row margin-top-40">
         <div class="text-center">
             <h5 localized>plugin.deviceinfo.title.apps.status</h5>

@@ -49,100 +49,106 @@
     </insert>
 
     <insert id="insertConfigurationApplications">
-        INSERT INTO configurationApplications(configurationId, applicationId, applicationVersionId, remove, showIcon,
-        action, screenOrder, keyCode, bottom, longTap)
+        INSERT INTO configurationapplications
+            (configurationId, applicationId, applicationVersionId, remove, showIcon,
+            action, screenOrder, keyCode, bottom, longTap)
         VALUES
         <foreach item="item" index="index" collection="apps"
-                 open="" separator="," close="">
+                open="" separator="," close="">
             (#{id}, #{item.id}, COALESCE(#{item.usedVersionId}, #{item.latestVersion}), #{item.remove}, #{item.showIcon},
             #{item.action}, #{item.screenOrder}, #{item.keyCode}, #{item.bottom}, #{item.longTap})
         </foreach>
     </insert>
 
     <insert id="insertConfigurationApplicationSettings">
-        INSERT INTO configurationApplicationSettings (extRefId, applicationId, name, type, value, comment, readonly, lastUpdate)
+        INSERT INTO configurationapplicationsettings
+            (extRefId, applicationId, name, type, value, comment, readonly, lastUpdate)
         VALUES
         <foreach item="item" index="index" collection="appSettings"
-                 open="" separator="," close="">
-            (${id}, #{item.applicationId}, #{item.name}, #{item.type}, #{item.value}, #{item.comment}, #{item.readonly}, #{item.lastUpdate})
+                open="" separator="," close="">
+            (#{id}, #{item.applicationId}, #{item.name}, #{item.type}, #{item.value}, #{item.comment}, #{item.readonly}, #{item.lastUpdate})
         </foreach>
     </insert>
 
     <insert id="insertConfigurationFiles">
-        INSERT INTO configurationFiles (configurationId, fileId, lastUpdate, remove)
+        INSERT INTO configurationfiles
+            (configurationId, fileId, lastUpdate, remove)
         VALUES
         <foreach item="item" index="index" collection="files"
-                 open="" separator="," close="">
-            (${id}, #{item.fileId}, 0, #{item.remove})
+                open="" separator="," close="">
+            (#{id}, #{item.fileId}, 0, #{item.remove})
         </foreach>
     </insert>
 
     <insert id="saveConfigurationApplicationUsageParameters">
-        INSERT INTO configurationApplicationParameters (configurationId, applicationId, skipVersionCheck)
+        INSERT INTO configurationapplicationparameters
+            (configurationId, applicationId, skipVersionCheck)
         VALUES
-        <foreach item="item" index="index" collection="appUsageParameters" open="" separator="," close="">
-            (${id}, #{item.applicationId}, #{item.skipVersionCheck})
+        <foreach item="item" index="index" collection="appUsageParameters"
+                open="" separator="," close="">
+            (#{id}, #{item.applicationId}, #{item.skipVersionCheck})
         </foreach>
-        ON CONFLICT ON CONSTRAINT cap_config_application_unique DO
-            UPDATE SET skipVersionCheck = EXCLUDED.skipVersionCheck
+        ON DUPLICATE KEY UPDATE
+            skipVersionCheck = VALUES(skipVersionCheck)
     </insert>
 
     <select id="getConfigurationApplications" resultType="Application">
-        CREATE TEMP TABLE ${tempTable} ON COMMIT DROP AS SELECT * FROM configurationApplications WHERE configurationApplications.configurationId = #{id};
         SELECT applications.id, applications.name, applications.pkg, applications.runAfterInstall, applications.runAtBoot,
                applications.type, applications.iconText, applications.iconId,
-               applicationVersions.version, applicationVersions.url,
-               applicationVersions.split, applicationVersions.urlArmeabi, applicationVersions.urlArm64,
-               configurationApplications.applicationVersionId AS usedVersionId,
+               applicationversions.version, applicationversions.url,
+               applicationversions.split, applicationversions.urlArmeabi, applicationversions.urlArm64,
+               configurationapplications.applicationVersionId AS usedVersionId,
                applications.system, applications.customerId,
                applications.latestVersion, applications.intent,
                latestAppVersion.version AS latestVersionText,
-               (configurationApplications.configurationId IS NOT NULL) as selected,
-               (configurationApplications.configurationId IS NOT NULL AND applications.latestVersion &lt;&gt; applicationVersions.id) as outdated,
+               (configurationapplications.configurationId IS NOT NULL) as selected,
+               (configurationapplications.configurationId IS NOT NULL AND applications.latestVersion &lt;&gt; applicationversions.id) as outdated,
                customers.master AS commonApplication,
-               COALESCE(configurationApplications.remove, FALSE) AS remove,
+               COALESCE(configurationapplications.remove, FALSE) AS remove,
                CASE
-                   WHEN configurationApplications.configurationId IS NOT NULL THEN configurationApplications.showIcon
+                   WHEN configurationapplications.configurationId IS NOT NULL THEN configurationapplications.showIcon
                    ELSE applications.showIcon
                END AS showIcon,
                applications.useKiosk,
-               configurationApplications.action AS action,
-               configurationApplications.screenOrder AS screenOrder,
-               configurationApplications.keyCode AS keyCode,
-               configurationApplications.bottom AS bottom,
-               configurationApplications.longTap AS longTap,
+               configurationapplications.action AS action,
+               configurationapplications.screenOrder AS screenOrder,
+               configurationapplications.keyCode AS keyCode,
+               configurationapplications.bottom AS bottom,
+               configurationapplications.longTap AS longTap,
                cap.skipVersionCheck AS skipVersion
         FROM applications
-        INNER JOIN applicationVersions AS latestAppVersion ON latestAppVersion.applicationId = applications.id AND latestAppVersion.id=applications.latestversion
+        INNER JOIN applicationversions AS latestAppVersion ON latestAppVersion.applicationId = applications.id AND latestAppVersion.id=applications.latestversion
         INNER JOIN customers ON customers.id = applications.customerId
-        INNER JOIN applicationVersions ON applicationVersions.applicationId = applications.id
-        LEFT JOIN ${tempTable} configurationApplications ON applicationVersions.id = configurationApplications.applicationVersionId AND configurationApplications.configurationId = #{id}
-        LEFT JOIN configurationApplicationParameters cap ON applications.id = cap.applicationId AND cap.configurationId = #{id}
+        INNER JOIN applicationversions ON applicationversions.applicationId = applications.id
+        LEFT JOIN (
+            SELECT * FROM configurationapplications WHERE configurationId = #{id}
+        ) configurationapplications ON applicationversions.id = configurationapplications.applicationVersionId AND configurationapplications.configurationId = #{id}
+        LEFT JOIN configurationapplicationparameters cap ON applications.id = cap.applicationId AND cap.configurationId = #{id}
         WHERE (applications.customerId=#{customerId}
            OR customers.master
             AND NOT EXISTS
                 (
                     SELECT 1
                     FROM applications apps2
-                    INNER JOIN applicationVersions ver2 ON ver2.applicationId=apps2.id
+                    INNER JOIN applicationversions ver2 ON ver2.applicationId=apps2.id
                     WHERE apps2.customerid = #{customerId}
                       AND apps2.pkg = applications.pkg
-                      AND ver2.version = applicationVersions.version
+                      AND ver2.version = applicationversions.version
                 ))
-          AND (configurationApplications.id IS NULL AND applicationversions.id=applications.latestversion OR NOT configurationApplications.id IS NULL)
+          AND (configurationapplications.id IS NULL AND applicationversions.id=applications.latestversion OR NOT configurationapplications.id IS NULL)
     </select>
 
     <select id="getPlainConfigurationApplications" resultType="Application">
         SELECT applications.id, applications.name, applications.pkg, applications.runAfterInstall, applications.runAtBoot,
-               applications.type, applications.iconText, applications.iconId, uploadedFiles.filepath AS icon,
-               applicationVersions.version, applicationVersions.versionCode, applicationVersions.url,
-               applicationVersions.split, applicationVersions.urlArmeabi, applicationVersions.urlArm64,
+               applications.type, applications.iconText, applications.iconId, uploadedfiles.filepath AS icon,
+               applicationversions.version, applicationversions.versionCode, applicationversions.url,
+               applicationversions.split, applicationversions.urlArmeabi, applicationversions.urlArm64,
                ${caTableName}.applicationVersionId AS usedVersionId,
                applications.system, applications.customerId,
                applications.latestVersion, applications.intent,
                latestAppVersion.version AS latestVersionText,
                customers.master AS commonApplication,
-               (${caTableName}.configurationId IS NOT NULL AND applications.latestVersion &lt;&gt; applicationVersions.id) as outdated,
+               (${caTableName}.configurationId IS NOT NULL AND applications.latestVersion &lt;&gt; applicationversions.id) as outdated,
                COALESCE(${caTableName}.remove, FALSE) AS remove,
                COALESCE(${caTableName}.showIcon, applications.showIcon) AS showIcon,
                applications.useKiosk,
@@ -156,49 +162,49 @@
                    ELSE NULL
                END AS skipVersion
         FROM applications
-        INNER JOIN applicationVersions AS latestAppVersion ON latestAppVersion.applicationId = applications.id AND latestAppVersion.id=applications.latestversion
+        INNER JOIN applicationversions AS latestAppVersion ON latestAppVersion.applicationId = applications.id AND latestAppVersion.id=applications.latestversion
         INNER JOIN customers ON customers.id = applications.customerId
-        INNER JOIN applicationVersions ON applicationVersions.applicationId = applications.id
-        JOIN ${caTableName} ON applicationVersions.id = ${caTableName}.applicationVersionId AND ${caTableName}.configurationId = #{id}
+        INNER JOIN applicationversions ON applicationversions.applicationId = applications.id
+        JOIN ${caTableName} ON applicationversions.id = ${caTableName}.applicationVersionId AND ${caTableName}.configurationId = #{id}
         LEFT JOIN configurationapplicationparameters cap ON cap.applicationId = applications.id AND cap.configurationId = #{id}
         LEFT JOIN icons ON icons.id = applications.iconId
-        LEFT JOIN uploadedFiles ON uploadedFiles.id = icons.fileId
+        LEFT JOIN uploadedfiles ON uploadedfiles.id = icons.fileId
         WHERE applications.customerId=#{customerId}
            OR customers.master
             AND NOT EXISTS
                 (
                     SELECT 1
                     FROM applications apps2
-                    INNER JOIN applicationVersions ver2 ON ver2.applicationId=apps2.id
+                    INNER JOIN applicationversions ver2 ON ver2.applicationId=apps2.id
                     WHERE apps2.customerid = #{customerId}
                       AND apps2.pkg = applications.pkg
-                      AND ver2.version = applicationVersions.version
+                      AND ver2.version = applicationversions.version
                 )
     </select>
 
     <select id="getPlainConfigurationAppsOptimized" resultType="Application">
         SELECT applications.id, applications.name, applications.pkg, applications.runAfterInstall, applications.runAtBoot,
                applications.type, applications.iconText, applications.iconId,
-               applicationVersions.version, applicationVersions.url,
-               configurationApplications.applicationVersionId AS usedVersionId,
+               applicationversions.version, applicationversions.url,
+               configurationapplications.applicationVersionId AS usedVersionId,
                applications.system, applications.customerId,
                applications.latestVersion, applications.intent,
-               (configurationApplications.configurationId IS NOT NULL AND applications.latestVersion &lt;&gt; applicationVersions.id) as outdated,
-               COALESCE(configurationApplications.remove, FALSE) AS remove,
-               COALESCE(configurationApplications.showIcon, applications.showIcon) AS showIcon,
+               (configurationapplications.configurationId IS NOT NULL AND applications.latestVersion &lt;&gt; applicationversions.id) as outdated,
+               COALESCE(configurationapplications.remove, FALSE) AS remove,
+               COALESCE(configurationapplications.showIcon, applications.showIcon) AS showIcon,
                applications.useKiosk,
-               configurationApplications.action AS action,
-               configurationApplications.screenOrder AS screenOrder,
-               configurationApplications.keyCode AS keyCode,
-               configurationApplications.bottom AS bottom,
-               configurationApplications.longTap AS longTap,
+               configurationapplications.action AS action,
+               configurationapplications.screenOrder AS screenOrder,
+               configurationapplications.keyCode AS keyCode,
+               configurationapplications.bottom AS bottom,
+               configurationapplications.longTap AS longTap,
                CASE
                    WHEN cap.skipVersionCheck IS TRUE THEN TRUE
                    ELSE NULL
                    END AS skipVersion
         FROM applications
-                 INNER JOIN applicationVersions ON applicationVersions.applicationId = applications.id
-                 JOIN configurationApplications ON applicationVersions.id = configurationApplications.applicationVersionId AND configurationApplications.configurationId = #{id}
+                 INNER JOIN applicationversions ON applicationversions.applicationId = applications.id
+                 JOIN configurationapplications ON applicationversions.id = configurationapplications.applicationVersionId AND configurationapplications.configurationId = #{id}
                  LEFT JOIN configurationapplicationparameters cap ON cap.applicationId = applications.id AND cap.configurationId = #{id}
     </select>
 </mapper>

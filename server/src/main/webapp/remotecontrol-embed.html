@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remote Control</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    font-family: sans-serif;
+}
+#status {
+    color: #aaa;
+    padding: 40px 20px;
+    font-size: 14px;
+    text-align: center;
+}
+#rc-video {
+    max-width: 100%;
+    max-height: 85vh;
+    cursor: crosshair;
+    display: none;
+    background: #000;
+}
+#controls {
+    display: none;
+    margin-top: 10px;
+    gap: 12px;
+    flex-direction: row;
+    justify-content: center;
+    padding-bottom: 12px;
+}
+#controls button {
+    background: #2c2c2c;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 15px;
+    cursor: pointer;
+}
+#controls button:hover {
+    background: #3a3a3a;
+}
+</style>
+</head>
+<body>
+<div id="status">Connecting...</div>
+<video id="rc-video" autoplay playsinline></video>
+<div id="controls">
+    <button onclick="sendKey(4)">&#8592; Back</button>
+    <button onclick="sendKey(3)">&#8962; Home</button>
+    <button onclick="sendKey(187)">&#9783; Recent</button>
+</div>
+
+<script>
+(function() {
+    var params = new URLSearchParams(window.location.search);
+    var sessionId = params.get('sessionId');
+    var token = params.get('token');
+
+    if (!sessionId || !token) {
+        document.getElementById('status').textContent = 'Missing session parameters.';
+        return;
+    }
+
+    var loc = window.location;
+    var basePath = loc.pathname.substring(0, loc.pathname.lastIndexOf('/'));
+    var wsProto = loc.protocol === 'https:' ? 'wss' : 'ws';
+    var wsUrl = wsProto + '://' + loc.host + basePath + '/ws/remotecontrol/' + sessionId + '?token=' + encodeURIComponent(token);
+
+    var peerConnection = null;
+    var dataChannel = null;
+    var ws = null;
+    var videoEl = document.getElementById('rc-video');
+    var statusEl = document.getElementById('status');
+    var controlsEl = document.getElementById('controls');
+
+    function sendSignaling(msg) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(msg));
+        }
+    }
+
+    function sendKey(keyCode) {
+        if (dataChannel && dataChannel.readyState === 'open') {
+            dataChannel.send(JSON.stringify({ type: 'key', keyCode: keyCode }));
+        }
+    }
+
+    window.sendKey = sendKey;
+
+    function setupTouchEvents() {
+        var rect;
+
+        function getCoords(e) {
+            rect = videoEl.getBoundingClientRect();
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) / rect.width,
+                y: (clientY - rect.top) / rect.height
+            };
+        }
+
+        function sendTouch(action, coords) {
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(JSON.stringify({ type: 'touch', action: action, x: coords.x, y: coords.y }));
+            }
+        }
+
+        videoEl.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            sendTouch('down', getCoords(e));
+        });
+        videoEl.addEventListener('mousemove', function(e) {
+            if (e.buttons === 1) {
+                sendTouch('move', getCoords(e));
+            }
+        });
+        videoEl.addEventListener('mouseup', function(e) {
+            sendTouch('up', getCoords(e));
+        });
+        videoEl.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            sendTouch('down', getCoords(e));
+        }, { passive: false });
+        videoEl.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            sendTouch('move', getCoords(e));
+        }, { passive: false });
+        videoEl.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            var lastTouch = e.changedTouches[0];
+            rect = videoEl.getBoundingClientRect();
+            sendTouch('up', {
+                x: (lastTouch.clientX - rect.left) / rect.width,
+                y: (lastTouch.clientY - rect.top) / rect.height
+            });
+        }, { passive: false });
+    }
+
+    async function handleOffer(sdp) {
+        try {
+            await peerConnection.setRemoteDescription({ type: 'offer', sdp: sdp });
+            var answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            sendSignaling({ type: 'sdpAnswer', sdp: answer.sdp });
+        } catch (err) {
+            statusEl.textContent = 'WebRTC error: ' + err.message;
+        }
+    }
+
+    function initPeerConnection() {
+        peerConnection = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        peerConnection.ontrack = function(event) {
+            videoEl.srcObject = event.streams[0] || new MediaStream([event.track]);
+            videoEl.style.display = 'block';
+            controlsEl.style.display = 'flex';
+            statusEl.style.display = 'none';
+            setupTouchEvents();
+        };
+
+        peerConnection.ondatachannel = function(event) {
+            dataChannel = event.channel;
+        };
+
+        peerConnection.onicecandidate = function(event) {
+            if (event.candidate) {
+                sendSignaling({ type: 'iceCandidate', candidate: event.candidate });
+            }
+        };
+
+        peerConnection.onconnectionstatechange = function() {
+            if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'disconnected') {
+                statusEl.textContent = 'Connection lost.';
+                statusEl.style.display = 'block';
+                videoEl.style.display = 'none';
+                controlsEl.style.display = 'none';
+            }
+        };
+    }
+
+    function connect() {
+        statusEl.textContent = 'Connecting...';
+        initPeerConnection();
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = function() {
+            statusEl.textContent = 'Waiting for device...';
+        };
+
+        ws.onmessage = function(event) {
+            var msg;
+            try { msg = JSON.parse(event.data); } catch(e) { return; }
+
+            if (msg.type === 'sdpOffer') {
+                handleOffer(msg.sdp);
+            } else if (msg.type === 'iceCandidate' && msg.candidate) {
+                peerConnection.addIceCandidate(msg.candidate).catch(function() {});
+            }
+        };
+
+        ws.onerror = function() {
+            statusEl.textContent = 'WebSocket error. Is the device online?';
+        };
+
+        ws.onclose = function() {
+            if (videoEl.style.display === 'none') {
+                statusEl.textContent = 'Connection closed.';
+            }
+        };
+    }
+
+    connect();
+})();
+</script>
+</body>
+</html>

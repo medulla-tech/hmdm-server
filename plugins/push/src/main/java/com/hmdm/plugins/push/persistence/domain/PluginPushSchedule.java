@@ -82,31 +82,31 @@ public class PluginPushSchedule implements CustomerData, Serializable {
     private String min;
 
     @ApiModelProperty("Scheduled minutes (bit string representation '0101...')")
-    private String minBit;
+    private Long minBit;
 
     @ApiModelProperty("Scheduled hours (readable representation in Crontab format)")
     private String hour;
 
     @ApiModelProperty("Scheduled hours (bit string representation '0101...')")
-    private String hourBit;
+    private Integer hourBit;
 
     @ApiModelProperty("Scheduled days of month (readable representation in Crontab format)")
     private String day;
 
     @ApiModelProperty("Scheduled days of month (bit string representation '0101...')")
-    private String dayBit;
+    private Integer dayBit;
 
     @ApiModelProperty("Scheduled days of week (readable representation in Crontab format)")
     private String weekday;
 
     @ApiModelProperty("Scheduled days of week (bit string representation '0101...')")
-    private String weekdayBit;
+    private Integer weekdayBit;
 
     @ApiModelProperty("Scheduled months (readable representation in Crontab format)")
     private String month;
 
     @ApiModelProperty("Scheduled months (bit string representation '0101...')")
-    private String monthBit;
+    private Integer monthBit;
 
     /**
      * <p>Constructs new <code>PluginPushMessage</code> instance. This implementation does nothing.</p>
@@ -228,11 +228,11 @@ public class PluginPushSchedule implements CustomerData, Serializable {
         this.min = min;
     }
 
-    public String getMinBit() {
+    public Long getMinBit() {
         return minBit;
     }
 
-    public void setMinBit(String minBit) {
+    public void setMinBit(Long minBit) {
         this.minBit = minBit;
     }
 
@@ -244,11 +244,11 @@ public class PluginPushSchedule implements CustomerData, Serializable {
         this.hour = hour;
     }
 
-    public String getHourBit() {
+    public Integer getHourBit() {
         return hourBit;
     }
 
-    public void setHourBit(String hourBit) {
+    public void setHourBit(Integer hourBit) {
         this.hourBit = hourBit;
     }
 
@@ -260,11 +260,11 @@ public class PluginPushSchedule implements CustomerData, Serializable {
         this.day = day;
     }
 
-    public String getDayBit() {
+    public Integer getDayBit() {
         return dayBit;
     }
 
-    public void setDayBit(String dayBit) {
+    public void setDayBit(Integer dayBit) {
         this.dayBit = dayBit;
     }
 
@@ -276,11 +276,11 @@ public class PluginPushSchedule implements CustomerData, Serializable {
         this.weekday = weekday;
     }
 
-    public String getWeekdayBit() {
+    public Integer getWeekdayBit() {
         return weekdayBit;
     }
 
-    public void setWeekdayBit(String weekdayBit) {
+    public void setWeekdayBit(Integer weekdayBit) {
         this.weekdayBit = weekdayBit;
     }
 
@@ -292,11 +292,11 @@ public class PluginPushSchedule implements CustomerData, Serializable {
         this.month = month;
     }
 
-    public String getMonthBit() {
+    public Integer getMonthBit() {
         return monthBit;
     }
 
-    public void setMonthBit(String monthBit) {
+    public void setMonthBit(Integer monthBit) {
         this.monthBit = monthBit;
     }
 
